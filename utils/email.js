@@ -10,7 +10,7 @@ const sendBrevoEmail = async (to, subject, htmlContent) => {
       {
         sender: {
           name: 'Relief Hub',
-          email: 'noreply@reliefhub.com'
+          email: 'devchollo@gmail.com'
         },
         to: [{ email: to }],
         subject: subject,
