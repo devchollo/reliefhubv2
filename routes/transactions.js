@@ -23,7 +23,7 @@ router.post('/', protect, async (req, res) => {
     }
 
     const request = await Request.findById(requestId);
-    
+
     if (!request || request.type !== 'money') {
       return res.status(404).json({
         success: false,
@@ -131,6 +131,73 @@ router.get('/request/:requestId', protect, async (req, res) => {
     res.status(500).json({
       success: false,
       message: error.message
+    });
+  }
+});
+
+// @route   GET /api/transactions/my-transactions
+// @desc    Get all transactions for logged-in donor
+router.get('/my-transactions', protect, async (req, res) => {
+  try {
+    const transactions = await Transaction.find({ donor: req.user._id })
+      .populate('request', 'title type requester')
+      .populate('request.requester', 'name')
+      .sort('-createdAt');
+
+    res.json({
+      success: true,
+      count: transactions.length,
+      data: transactions
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// @route   GET /api/transactions/stats
+// @desc    Get donor transaction statistics
+router.get('/stats', protect, async (req, res) => {
+  try {
+    const total = await Transaction.countDocuments({ donor: req.user._id });
+    const totalAmount = await Transaction.aggregate([
+      { $match: { donor: req.user._id, status: 'completed' } },
+      { $group: { _id: null, total: { $sum: '$amount' } } }
+    ]);
+
+    res.json({
+      success: true,
+      totalTransactions: total,
+      totalAmount: totalAmount[0]?.total || 0
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// @route   GET /api/transactions/unread-count
+// @desc    Get count of unread notifications for the logged-in user
+router.get('/unread-count', protect, async (req, res) => {
+  try {
+    const count = await Notification.countDocuments({
+      user: req.user._id,
+      read: false
+    });
+
+    res.json({
+      success: true,
+      count
+    });
+  } catch (error) {
+    console.error('Error fetching unread count:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch unread count'
     });
   }
 });

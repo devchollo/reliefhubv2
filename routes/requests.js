@@ -10,7 +10,15 @@ const { sendEmailToAll } = require('../utils/email');
 // @route   POST /api/requests
 router.post('/', protect, async (req, res) => {
   try {
-    const { type, title, description, lat, lng, address, gcashNumber, amountNeeded } = req.body;
+    let { type, title, description, lat, lng, address, gcashNumber, amountNeeded } = req.body;
+
+    // Validate coordinates
+    if (!lat || !lng) {
+      return res.status(400).json({
+        success: false,
+        message: 'Latitude and longitude are required.'
+      });
+    }
 
     const request = await Request.create({
       requester: req.user._id,
@@ -19,7 +27,7 @@ router.post('/', protect, async (req, res) => {
       description,
       location: {
         type: 'Point',
-        coordinates: [lng, lat]
+        coordinates: [parseFloat(lng), parseFloat(lat)]
       },
       address,
       gcashNumber: type === 'money' ? gcashNumber : undefined,
@@ -28,10 +36,7 @@ router.post('/', protect, async (req, res) => {
 
     await request.populate('requester', 'name email phone');
 
-    // Send email to ALL users
-    await sendEmailToAll(request);
-
-    // Create notifications
+    // Notify all active users except requester
     const allUsers = await User.find({ _id: { $ne: req.user._id }, isActive: true });
     const notifications = allUsers.map(user => ({
       user: user._id,
@@ -39,20 +44,25 @@ router.post('/', protect, async (req, res) => {
       message: `New ${type} request from ${req.user.name}`,
       relatedRequest: request._id
     }));
-    
-    await Notification.insertMany(notifications);
+
+    if (notifications.length) await Notification.insertMany(notifications);
+
+    // Send email to all
+    await sendEmailToAll(request);
 
     res.status(201).json({
       success: true,
       data: request
     });
   } catch (error) {
+    console.error('Error creating request:', error);
     res.status(400).json({
       success: false,
       message: error.message
     });
   }
 });
+
 
 // @route   GET /api/requests
 router.get('/', protect, async (req, res) => {
@@ -252,5 +262,29 @@ router.post('/:id/confirm-complete', protect, async (req, res) => {
     });
   }
 });
+
+// @route   GET /api/requests/accepted
+router.get('/accepted', protect, async (req, res) => {
+  try {
+    const requests = await Request.find({
+      volunteer: req.user._id,
+      status: { $in: ['in-progress', 'completed'] }
+    })
+    .populate('requester', 'name phone')
+    .sort('-createdAt');
+
+    res.json({
+      success: true,
+      count: requests.length,
+      data: requests
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
 
 module.exports = router;
