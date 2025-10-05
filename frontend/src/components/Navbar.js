@@ -3,9 +3,10 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
   Heart, Bell, Menu, X, LogOut, User, LayoutDashboard, 
-  Trophy, Check, Trash2, Package, AlertCircle, DollarSign 
+  Trophy, Check, Trash2, Package, AlertCircle, DollarSign, MessageCircle 
 } from 'lucide-react';
 import notificationService from '../services/notificationService';
+import chatService from '../services/chatService';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -44,6 +45,22 @@ const Navbar = () => {
       return () => clearInterval(interval);
     }
   }, [user]);
+
+  // Add chat notification check
+const [unreadChats, setUnreadChats] = useState(0);
+
+useEffect(() => {
+  if (user) {
+    fetchUnreadChats();
+  }
+}, [user]);
+
+const fetchUnreadChats = async () => {
+  const result = await chatService.getUnreadCount();
+  if (result.success) {
+    setUnreadChats(result.data);
+  }
+};
 
   const fetchNotifications = async () => {
     setLoading(true);
