@@ -43,15 +43,19 @@ app.use('/api', limiter);
 // DATABASE CONNECTION
 // ============================================
 
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/relief-hub', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-  .then(() => console.log('✅ MongoDB Connected'))
-  .catch((err) => {
+const connectDB = async () => {
+  try {
+    const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/relief-hub');
+    console.log('✅ MongoDB Connected:', conn.connection.host);
+  } catch (err) {
     console.error('❌ MongoDB Connection Error:', err.message);
+    console.error('💡 Check your MONGODB_URI in .env file');
+    console.error('💡 Make sure your MongoDB username, password, and database name are correct');
     process.exit(1);
-  });
+  }
+};
+
+connectDB();
 
 // ============================================
 // ROUTES
