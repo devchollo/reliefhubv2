@@ -61,11 +61,13 @@ connectDB();
 // ROUTES
 // ============================================
 
+// Health check
 app.get('/', (req, res) => {
   res.json({
     success: true,
     message: 'Relief Hub API v2.0',
     version: '2.0.0',
+    status: 'running',
     endpoints: {
       auth: '/api/auth',
       requests: '/api/requests',
@@ -76,12 +78,37 @@ app.get('/', (req, res) => {
   });
 });
 
+// API health check
+app.get('/api', (req, res) => {
+  res.json({
+    success: true,
+    message: 'API is running',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // API Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/requests', require('./routes/requests'));
-app.use('/api/transactions', require('./routes/transactions'));
-app.use('/api/notifications', require('./routes/notifications'));
-app.use('/api/users', require('./routes/users'));
+const authRoutes = require('./routes/auth');
+const requestRoutes = require('./routes/requests');
+const transactionRoutes = require('./routes/transactions');
+const notificationRoutes = require('./routes/notifications');
+const userRoutes = require('./routes/users');
+
+app.use('/api/auth', authRoutes);
+app.use('/api/requests', requestRoutes);
+app.use('/api/transactions', transactionRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/users', userRoutes);
+
+// Log all registered routes (for debugging)
+if (process.env.NODE_ENV === 'development') {
+  console.log('📍 Registered Routes:');
+  app._router.stack.forEach((r) => {
+    if (r.route && r.route.path) {
+      console.log(`   ${Object.keys(r.route.methods)} ${r.route.path}`);
+    }
+  });
+}
 
 // ============================================
 // ERROR HANDLING

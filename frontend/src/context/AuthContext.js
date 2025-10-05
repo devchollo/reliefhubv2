@@ -39,6 +39,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
+      console.log('Login attempt:', { email, apiUrl: api.defaults.baseURL });
       const response = await api.post('/auth/login', { email, password });
       const { token, user: userData } = response.data;
       
@@ -48,16 +49,25 @@ export const AuthProvider = ({ children }) => {
       
       return { success: true };
     } catch (error) {
+      console.error('Login error:', error.response?.data || error.message);
       return {
         success: false,
-        error: error.response?.data?.message || 'Login failed'
+        error: error.response?.data?.message || error.message || 'Login failed'
       };
     }
   };
 
   const register = async (userData) => {
     try {
+      console.log('🔵 Register attempt:', { 
+        apiUrl: api.defaults.baseURL,
+        fullUrl: `${api.defaults.baseURL}/auth/register`,
+        userData: { ...userData, password: '***' }
+      });
+      
       const response = await api.post('/auth/register', userData);
+      console.log('✅ Register success:', response.data);
+      
       const { token, user: newUser } = response.data;
       
       localStorage.setItem('token', token);
@@ -66,9 +76,16 @@ export const AuthProvider = ({ children }) => {
       
       return { success: true };
     } catch (error) {
+      console.error('❌ Registration error:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        url: error.config?.url
+      });
+      
       return {
         success: false,
-        error: error.response?.data?.message || 'Registration failed'
+        error: error.response?.data?.message || error.message || 'Registration failed'
       };
     }
   };
