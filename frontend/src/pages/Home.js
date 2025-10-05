@@ -40,15 +40,18 @@ const Home = () => {
   }, [requests, filters]);
 
   const fetchRequests = async () => {
-    setLoading(true);
-    const result = await requestService.getAllRequests({ status: 'open' });
-    if (result.success) {
-      setRequests(result.data);
-    } else {
-      error(result.error);
-    }
-    setLoading(false);
-  };
+  setLoading(true);
+  const result = await requestService.getAllRequests({ status: 'open' });
+  
+  if (result.success && Array.isArray(result.data)) {
+    setRequests(result.data);
+  } else {
+    setRequests([]); // 👈 prevent undefined
+    error(result.error || "Failed to fetch requests");
+  }
+
+  setLoading(false);
+};
 
   const applyFilters = () => {
     let filtered = [...requests];

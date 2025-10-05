@@ -73,4 +73,25 @@ router.put('/mark-all-read', protect, async (req, res) => {
   }
 });
 
+
+// @route   GET /api/notifications/unread-count
+router.get('/unread-count', protect, async (req, res) => {
+  try {
+    const unreadCount = await Notification.countDocuments({
+      user: req.user._id,
+      isRead: false
+    });
+
+    res.json({
+      success: true,
+      unreadCount
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
 module.exports = router;
