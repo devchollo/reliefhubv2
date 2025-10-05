@@ -3,3 +3,48 @@ move completed requests to completed instead of staying in in progress
 chat feature | peer to peer communication only. requestee and volunteer.
 profile page - for requestee to leave review/testimonials
 show the requests on the map pinned
+
+
+
+Before you proceed in generating the rest of the features. I need you to scan the repository once more time as i have made some adjustments earlier. 
+Ill be giving you the front-end first, then the backend. dont answer yet, wait till i say so. 
+
+And ill say this in advance, i need you to create a profile page for each users where the people they helped can leave a feedback/thanks. make their stats (how many were they able to help, how much amount they donated, and their ranking on the leaderboard)
+Of course the profile should have their name, photo, address and contact info (they can choose to make it public or not), and of course settings, for updating their personal information including their image, name, address, contact and for password reset. 
+
+also i need you to show the help requests on leaflet/map not just on the sidebar where the requests are all listed. 
+then you can proceed with the chat feature that we talked about.
+also i need you to fix the Dashboard as requests that have been marked completed is not moving on the completed tab.
+lastly, as i've informed you before, if people are requesting money, it needs to go through GCash API where i can get the platform fee of 2.5% (money will go to the recipient directly minus the fee)
+
+one last thing, can we use something like, websocket for notifications, request accepted, posting help request and completion so that they dont have to refrehs the browser all the time?
+
+Ill be sending you now the repository. Standby
+
+
+MISSING 
+3. backend/routes/chat.js
+
+Artifact: backend_routes_chat
+Purpose: Chat API endpoints
+
+4. backend/routes/profile.js
+Artifact: backend_routes_profile
+Purpose: Profile and review endpoints
+
+
+
+
+
+
+Please finish the project, i want you to scan all the codes and generate the missing files
+specially, routes/chat.js and routes/profile.js
+I also cant save any information in Settings page
+The Navbar doesnt have an option to go to profile or settings 
+on the Dashboard, when I press on edit it just goes back to '/' instead of showing me a modal to edit my own help request, of course the chat option wont work and the leave a review also doesnt work. 
+on the Leaderboard page - its not reflecting the actual people I have helped and its not giving me any badge or rank or points.
+The help request can be closed by the volunteer without the requestee acknowledgement that the volunteer was really able to help them. it should be like this. once a volunteer mark it as complete, the requestee should have an option to acknowledge it so that i can be finally closed.
+now for the help request that includes money - the volunteer / donator should have a button to send exact amount or a custom amount and the payment should undergo our system so that we can get the 10% cut.
+and on the request help modal form, the Barangay be changed to Address, and it should auto populate if the location is auto detected.
+Lastly, the landing page/home page is still not pinning the requests location on the leaflet map! 
+

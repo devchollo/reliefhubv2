@@ -7,7 +7,7 @@ const Request = require('../models/Request');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
 const { protect } = require('../middleware/auth');
-const { sendEmailToAll } = require('../utils/email');
+// const { sendEmailToAll } = require('../utils/email'); -- TURNING THIS OFF FOR NOW
 
 // Logging middleware
 router.use((req, res, next) => {
@@ -83,9 +83,9 @@ router.post('/', protect, async (req, res) => {
     }
 
     // Send emails (async, don't wait)
-    sendEmailToAll(request).catch(err => 
-      console.error('Email send error:', err.message)
-    );
+    // sendEmailToAll(request).catch(err => 
+    //   console.error('Email send error:', err.message)
+    // );
 
     res.status(201).json({
       success: true,
