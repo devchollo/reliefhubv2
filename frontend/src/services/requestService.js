@@ -1,3 +1,6 @@
+// ============================================
+// frontend/src/services/requestService.js - FIXED
+// ============================================
 import api from '../config/api';
 
 const requestService = {
@@ -10,11 +13,19 @@ const requestService = {
       if (filters.urgency) params.append('urgency', filters.urgency);
       
       const response = await api.get(`/requests?${params.toString()}`);
-      return { success: true, data: response.data };
+      
+      // Ensure we always return an array
+      const data = response.data?.data || response.data || [];
+      return { 
+        success: true, 
+        data: Array.isArray(data) ? data : []
+      };
     } catch (error) {
+      console.error('getAllRequests error:', error);
       return {
         success: false,
-        error: error.response?.data?.message || 'Failed to fetch requests'
+        error: error.response?.data?.message || 'Failed to fetch requests',
+        data: []
       };
     }
   },
@@ -23,7 +34,7 @@ const requestService = {
   getRequest: async (id) => {
     try {
       const response = await api.get(`/requests/${id}`);
-      return { success: true, data: response.data };
+      return { success: true, data: response.data?.data || response.data };
     } catch (error) {
       return {
         success: false,
@@ -36,7 +47,7 @@ const requestService = {
   createRequest: async (requestData) => {
     try {
       const response = await api.post('/requests', requestData);
-      return { success: true, data: response.data };
+      return { success: true, data: response.data?.data || response.data };
     } catch (error) {
       return {
         success: false,
@@ -49,7 +60,7 @@ const requestService = {
   updateRequest: async (id, updates) => {
     try {
       const response = await api.put(`/requests/${id}`, updates);
-      return { success: true, data: response.data };
+      return { success: true, data: response.data?.data || response.data };
     } catch (error) {
       return {
         success: false,
@@ -75,7 +86,7 @@ const requestService = {
   acceptRequest: async (id) => {
     try {
       const response = await api.post(`/requests/${id}/accept`);
-      return { success: true, data: response.data };
+      return { success: true, data: response.data?.data || response.data };
     } catch (error) {
       return {
         success: false,
@@ -88,7 +99,7 @@ const requestService = {
   completeRequest: async (id, completionData) => {
     try {
       const response = await api.post(`/requests/${id}/complete`, completionData);
-      return { success: true, data: response.data };
+      return { success: true, data: response.data?.data || response.data };
     } catch (error) {
       return {
         success: false,
@@ -101,11 +112,19 @@ const requestService = {
   getMyRequests: async () => {
     try {
       const response = await api.get('/requests/my-requests');
-      return { success: true, data: response.data };
+      
+      // Ensure we always return an array
+      const data = response.data?.data || response.data || [];
+      return { 
+        success: true, 
+        data: Array.isArray(data) ? data : []
+      };
     } catch (error) {
+      console.error('getMyRequests error:', error);
       return {
         success: false,
-        error: error.response?.data?.message || 'Failed to fetch your requests'
+        error: error.response?.data?.message || 'Failed to fetch your requests',
+        data: []
       };
     }
   },
@@ -114,11 +133,19 @@ const requestService = {
   getAcceptedRequests: async () => {
     try {
       const response = await api.get('/requests/accepted');
-      return { success: true, data: response.data };
+      
+      // Ensure we always return an array
+      const data = response.data?.data || response.data || [];
+      return { 
+        success: true, 
+        data: Array.isArray(data) ? data : []
+      };
     } catch (error) {
+      console.error('getAcceptedRequests error:', error);
       return {
         success: false,
-        error: error.response?.data?.message || 'Failed to fetch accepted requests'
+        error: error.response?.data?.message || 'Failed to fetch accepted requests',
+        data: []
       };
     }
   }
