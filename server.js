@@ -16,16 +16,37 @@ const app = express();
 // MIDDLEWARE
 // ============================================
 
+// Trust proxy - IMPORTANT for Render, Heroku, etc.
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(helmet());
 app.use(mongoSanitize());
 app.use(xss());
 
 // CORS
-app.use(cors({
+const corsOptions = {
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
-}));
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+// Allow multiple origins in production
+if (process.env.NODE_ENV === 'production') {
+  const allowedOrigins = process.env.FRONTEND_URL 
+    ? process.env.FRONTEND_URL.split(',') 
+    : ['*'];
+  
+  corsOptions.origin = (origin, callback) => {
+    if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  };
+}
+
+app.use(cors(corsOptions));
 
 // Body parser
 app.use(express.json({ limit: '10mb' }));
@@ -35,7 +56,14 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
   max: parseInt(process.env.RATE_LIMIT_MAX) || 100,
-  message: 'Too many requests from this IP, please try again later.'
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  // Trust proxy is already set above
+  skip: (req) => {
+    // Skip rate limiting for health checks
+    return req.path === '/' || req.path === '/api';
+  }
 });
 app.use('/api', limiter);
 
