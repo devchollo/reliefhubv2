@@ -13,7 +13,12 @@ import {
   MapPin,
   Calendar,
   AlertCircle,
-  Star
+  Star,
+  Droplets,
+  Home as HomeIcon,
+  Shirt,
+  Pill,
+  DollarSign
 } from 'lucide-react';
 
 const Dashboard = () => {
@@ -40,9 +45,9 @@ const Dashboard = () => {
       transactionService.getStats()
     ]);
 
-    if (myReqResult.success) setMyRequests(myReqResult.data);
-    if (acceptedResult.success) setAcceptedRequests(acceptedResult.data);
-    if (transResult.success) setTransactions(transResult.data);
+    if (myReqResult.success) setMyRequests(myReqResult.data || []);
+    if (acceptedResult.success) setAcceptedRequests(acceptedResult.data || []);
+    if (transResult.success) setTransactions(transResult.data || []);
     if (statsResult.success) setStats(statsResult.data);
 
     setLoading(false);
@@ -76,7 +81,7 @@ const Dashboard = () => {
   };
 
   const StatCard = ({ icon: Icon, title, value, color, subtitle }) => (
-    <div className="bg-white rounded-xl p-6 shadow-sm border">
+    <div className="bg-white rounded-xl p-6 shadow-sm border hover:shadow-md transition">
       <div className="flex items-center justify-between mb-2">
         <div className={`p-3 rounded-lg ${color}`}>
           <Icon className="w-6 h-6 text-white" />
@@ -90,30 +95,44 @@ const Dashboard = () => {
   );
 
   const urgencyColors = {
-    low: 'bg-green-100 text-green-700',
-    medium: 'bg-yellow-100 text-yellow-700',
-    high: 'bg-orange-100 text-orange-700',
-    critical: 'bg-red-100 text-red-700'
+    low: 'bg-green-100 text-green-700 border-green-200',
+    medium: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+    high: 'bg-orange-100 text-orange-700 border-orange-200',
+    critical: 'bg-red-100 text-red-700 border-red-200'
   };
 
   const statusColors = {
-    open: 'bg-blue-100 text-blue-700',
-    accepted: 'bg-purple-100 text-purple-700',
-    'in-progress': 'bg-yellow-100 text-yellow-700',
-    completed: 'bg-green-100 text-green-700',
-    cancelled: 'bg-red-100 text-red-700'
+    open: 'bg-blue-100 text-blue-700 border-blue-200',
+    pending: 'bg-blue-100 text-blue-700 border-blue-200',
+    accepted: 'bg-purple-100 text-purple-700 border-purple-200',
+    'in-progress': 'bg-yellow-100 text-yellow-700 border-yellow-200',
+    completed: 'bg-green-100 text-green-700 border-green-200',
+    cancelled: 'bg-red-100 text-red-700 border-red-200'
+  };
+
+  const typeIcons = {
+    food: Package,
+    water: Droplets,
+    shelter: HomeIcon,
+    clothing: Shirt,
+    medical: Pill,
+    money: DollarSign,
+    other: AlertCircle
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -122,46 +141,44 @@ const Dashboard = () => {
         </div>
 
         {/* Stats Grid */}
-        {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <StatCard
-              icon={Package}
-              title="Total Requests"
-              value={stats.totalRequests || 0}
-              color="bg-blue-500"
-              subtitle="Requests you've created"
-            />
-            <StatCard
-              icon={Heart}
-              title="Helped Others"
-              value={stats.totalHelped || 0}
-              color="bg-purple-500"
-              subtitle="Requests you've fulfilled"
-            />
-            <StatCard
-              icon={CheckCircle}
-              title="Completed"
-              value={stats.completed || 0}
-              color="bg-green-500"
-              subtitle="Successfully delivered"
-            />
-            <StatCard
-              icon={Star}
-              title="Rating"
-              value={stats.averageRating ? stats.averageRating.toFixed(1) : 'N/A'}
-              color="bg-yellow-500"
-              subtitle={`From ${stats.totalRatings || 0} reviews`}
-            />
-          </div>
-        )}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <StatCard
+            icon={Package}
+            title="My Requests"
+            value={myRequests.length}
+            color="bg-blue-500"
+            subtitle="Requests you've created"
+          />
+          <StatCard
+            icon={Heart}
+            title="Helping Others"
+            value={acceptedRequests.length}
+            color="bg-purple-500"
+            subtitle="Requests you're fulfilling"
+          />
+          <StatCard
+            icon={CheckCircle}
+            title="Completed"
+            value={stats?.totalTransactions || 0}
+            color="bg-green-500"
+            subtitle="Successfully delivered"
+          />
+          <StatCard
+            icon={Star}
+            title="Impact Score"
+            value={user.totalHelps || 0}
+            color="bg-yellow-500"
+            subtitle="People helped"
+          />
+        </div>
 
         {/* Tabs */}
         <div className="bg-white rounded-xl shadow-sm border mb-6">
           <div className="border-b">
-            <div className="flex space-x-8 px-6">
+            <div className="flex overflow-x-auto space-x-8 px-6">
               <button
                 onClick={() => setActiveTab('myRequests')}
-                className={`py-4 border-b-2 font-medium transition ${
+                className={`py-4 border-b-2 font-medium transition whitespace-nowrap ${
                   activeTab === 'myRequests'
                     ? 'border-blue-600 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -171,7 +188,7 @@ const Dashboard = () => {
               </button>
               <button
                 onClick={() => setActiveTab('helping')}
-                className={`py-4 border-b-2 font-medium transition ${
+                className={`py-4 border-b-2 font-medium transition whitespace-nowrap ${
                   activeTab === 'helping'
                     ? 'border-blue-600 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -181,7 +198,7 @@ const Dashboard = () => {
               </button>
               <button
                 onClick={() => setActiveTab('transactions')}
-                className={`py-4 border-b-2 font-medium transition ${
+                className={`py-4 border-b-2 font-medium transition whitespace-nowrap ${
                   activeTab === 'transactions'
                     ? 'border-blue-600 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -192,7 +209,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="p-6">
+          <div className="p-4 md:p-6">
             {/* My Requests Tab */}
             {activeTab === 'myRequests' && (
               <div className="space-y-4">
@@ -202,54 +219,65 @@ const Dashboard = () => {
                     <p>You haven't created any requests yet</p>
                   </div>
                 ) : (
-                  myRequests.map((request) => (
-                    <div key={request._id} className="border rounded-lg p-4 hover:shadow-md transition">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-lg text-gray-900 mb-1">{request.title}</h3>
-                          <p className="text-sm text-gray-600 mb-2">{request.description}</p>
-                        </div>
-                        <div className="flex gap-2">
-                          <span className={`text-xs px-3 py-1 rounded-full font-medium ${statusColors[request.status]}`}>
-                            {request.status}
-                          </span>
-                          <span className={`text-xs px-3 py-1 rounded-full font-medium ${urgencyColors[request.urgency]}`}>
-                            {request.urgency}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 mb-3">
-                        <div className="flex items-center gap-2">
-                          <Package className="w-4 h-4" />
-                          <span className="capitalize">{request.category}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <MapPin className="w-4 h-4" />
-                          <span>{request.location.barangay}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4" />
-                          <span>{new Date(request.createdAt).toLocaleDateString()}</span>
-                        </div>
-                        {request.acceptedBy && (
-                          <div className="flex items-center gap-2">
-                            <Users className="w-4 h-4" />
-                            <span>{request.acceptedBy.name}</span>
+                  myRequests.map((request) => {
+                    const TypeIcon = typeIcons[request.type] || AlertCircle;
+                    return (
+                      <div key={request._id} className="border rounded-lg p-4 hover:shadow-md transition bg-white">
+                        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="p-2 bg-blue-50 rounded-lg">
+                                <TypeIcon className="w-5 h-5 text-blue-600" />
+                              </div>
+                              <div>
+                                <h3 className="font-semibold text-lg text-gray-900">{request.title}</h3>
+                                <p className="text-xs text-gray-500 capitalize">{request.type}</p>
+                              </div>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-2">{request.description}</p>
                           </div>
+                          <div className="flex flex-wrap gap-2">
+                            <span className={`text-xs px-3 py-1 rounded-full font-medium border ${statusColors[request.status]}`}>
+                              {request.status}
+                            </span>
+                            <span className={`text-xs px-3 py-1 rounded-full font-medium border ${urgencyColors[request.urgency]}`}>
+                              {request.urgency}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 mb-3">
+                          <div className="flex items-center gap-2">
+                            <Package className="w-4 h-4 flex-shrink-0" />
+                            <span className="capitalize truncate">{request.type}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-4 h-4 flex-shrink-0" />
+                            <span className="truncate">{request.location?.barangay || 'N/A'}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4 flex-shrink-0" />
+                            <span className="truncate">{new Date(request.createdAt).toLocaleDateString()}</span>
+                          </div>
+                          {(request.acceptedBy || request.volunteer) && (
+                            <div className="flex items-center gap-2">
+                              <Users className="w-4 h-4 flex-shrink-0" />
+                              <span className="truncate">{request.acceptedBy?.name || request.volunteer?.name || 'Volunteer'}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {request.status === 'in-progress' && (
+                          <button
+                            onClick={() => handleCompleteRequest(request._id)}
+                            className="w-full md:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                          >
+                            Mark as Completed
+                          </button>
                         )}
                       </div>
-
-                      {request.status === 'in-progress' && (
-                        <button
-                          onClick={() => handleCompleteRequest(request._id)}
-                          className="w-full md:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-                        >
-                          Mark as Completed
-                        </button>
-                      )}
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             )}
@@ -263,35 +291,47 @@ const Dashboard = () => {
                     <p>You're not helping with any requests yet</p>
                   </div>
                 ) : (
-                  acceptedRequests.map((request) => (
-                    <div key={request._id} className="border rounded-lg p-4 hover:shadow-md transition">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-lg text-gray-900 mb-1">{request.title}</h3>
-                          <p className="text-sm text-gray-600 mb-2">{request.description}</p>
-                          <p className="text-sm text-gray-500">Requester: {request.requester.name}</p>
+                  acceptedRequests.map((request) => {
+                    const TypeIcon = typeIcons[request.type] || AlertCircle;
+                    return (
+                      <div key={request._id} className="border rounded-lg p-4 hover:shadow-md transition bg-white">
+                        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="p-2 bg-purple-50 rounded-lg">
+                                <TypeIcon className="w-5 h-5 text-purple-600" />
+                              </div>
+                              <div>
+                                <h3 className="font-semibold text-lg text-gray-900">{request.title}</h3>
+                                <p className="text-sm text-gray-500">Requester: {request.requester?.name}</p>
+                              </div>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-2">{request.description}</p>
+                          </div>
+                          <span className={`text-xs px-3 py-1 rounded-full font-medium border ${statusColors[request.status]}`}>
+                            {request.status}
+                          </span>
                         </div>
-                        <span className={`text-xs px-3 py-1 rounded-full font-medium ${statusColors[request.status]}`}>
-                          {request.status}
-                        </span>
-                      </div>
 
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                        <div className="flex items-center gap-2">
-                          <MapPin className="w-4 h-4" />
-                          <span>{request.location.barangay}, {request.location.city}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Package className="w-4 h-4" />
-                          <span>{request.quantity}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Clock className="w-4 h-4" />
-                          <span>{new Date(request.acceptedAt).toLocaleDateString()}</span>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-4 h-4 flex-shrink-0" />
+                            <span className="truncate">
+                              {request.location?.barangay}, {request.location?.city || 'Cebu'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Package className="w-4 h-4 flex-shrink-0" />
+                            <span className="truncate capitalize">{request.type}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-4 h-4 flex-shrink-0" />
+                            <span className="truncate">{new Date(request.acceptedAt).toLocaleDateString()}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             )}
@@ -306,15 +346,15 @@ const Dashboard = () => {
                   </div>
                 ) : (
                   transactions.map((transaction) => (
-                    <div key={transaction._id} className="border rounded-lg p-4 hover:shadow-md transition">
-                      <div className="flex items-start justify-between mb-3">
+                    <div key={transaction._id} className="border rounded-lg p-4 hover:shadow-md transition bg-white">
+                      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-3">
                         <div className="flex-1">
                           <h3 className="font-semibold text-lg text-gray-900 mb-1">
-                            {transaction.request.title}
+                            {transaction.request?.title || 'Transaction'}
                           </h3>
-                          <div className="flex items-center gap-4 text-sm text-gray-600">
-                            <span>Type: <span className="capitalize font-medium">{transaction.type}</span></span>
-                            <span>•</span>
+                          <div className="flex flex-wrap items-center gap-2 md:gap-4 text-sm text-gray-600">
+                            <span>Type: <span className="capitalize font-medium">{transaction.type || 'donation'}</span></span>
+                            <span className="hidden md:inline">•</span>
                             <span>Status: <span className="capitalize font-medium">{transaction.status}</span></span>
                           </div>
                         </div>
@@ -327,12 +367,15 @@ const Dashboard = () => {
                       </div>
 
                       <div className="text-sm text-gray-600 space-y-1 mb-3">
-                        <p>Donor: {transaction.donor.name}</p>
-                        <p>Recipient: {transaction.recipient.name}</p>
+                        {transaction.donor && <p>Donor: {transaction.donor.name}</p>}
+                        {transaction.recipient && <p>Recipient: {transaction.recipient.name}</p>}
                         <p>Date: {new Date(transaction.createdAt).toLocaleDateString()}</p>
+                        {transaction.amount && (
+                          <p className="font-semibold text-green-600">Amount: ₱{transaction.amount.toLocaleString()}</p>
+                        )}
                       </div>
 
-                      {transaction.status === 'completed' && !transaction.confirmedAt && user._id === transaction.recipient._id && (
+                      {transaction.status === 'completed' && !transaction.confirmedAt && user._id === transaction.recipient?._id && (
                         <button
                           onClick={() => handleConfirmDelivery(transaction._id)}
                           className="w-full md:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"

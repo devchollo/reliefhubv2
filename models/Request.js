@@ -1,8 +1,3 @@
-// ============================================
-// models/Request.js
-// ============================================
-const mongoose = require('mongoose');
-
 const requestSchema = new mongoose.Schema({
   requester: {
     type: mongoose.Schema.Types.ObjectId,
@@ -23,6 +18,30 @@ const requestSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  // ADD THESE FIELDS:
+  category: {
+    type: String,
+    enum: ['food', 'medical', 'shelter', 'other'],
+    default: function() { 
+      // Map type to category for frontend compatibility
+      const mapping = {
+        'food': 'food',
+        'medical': 'medical',
+        'shelter': 'shelter',
+        'clothing': 'other',
+        'money': 'other',
+        'water': 'food',
+        'other': 'other'
+      };
+      return mapping[this.type] || 'other';
+    }
+  },
+  urgency: {
+    type: String,
+    enum: ['low', 'medium', 'high', 'critical'],
+    default: 'medium'
+  },
+  quantity: String,
   location: {
     type: {
       type: String,
@@ -32,15 +51,21 @@ const requestSchema = new mongoose.Schema({
     coordinates: {
       type: [Number],
       required: true
-    }
+    },
+    barangay: String,
+    city: String
   },
   address: String,
   status: {
     type: String,
-    enum: ['pending', 'in-progress', 'completed', 'cancelled'],
-    default: 'pending'
+    enum: ['open', 'accepted', 'in-progress', 'completed', 'cancelled'],
+    default: 'open'  // Changed from 'pending' to 'open'
   },
-  volunteer: {
+  acceptedBy: {  // Changed from 'volunteer' to match frontend
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  volunteer: {  // Keep for backward compatibility
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   },
@@ -60,7 +85,3 @@ const requestSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
-
-requestSchema.index({ location: '2dsphere' });
-
-module.exports = mongoose.model('Request', requestSchema);

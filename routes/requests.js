@@ -17,9 +17,8 @@ router.use((req, res, next) => {
 // @route   POST /api/requests
 router.post('/', protect, async (req, res) => {
   try {
-    let { type, title, description, lat, lng, address, gcashNumber, amountNeeded } = req.body;
+    let { type, title, description, lat, lng, address, gcashNumber, amountNeeded, category, urgency, quantity, barangay, city } = req.body;
 
-    // Validate coordinates
     if (!lat || !lng) {
       return res.status(400).json({
         success: false,
@@ -32,18 +31,23 @@ router.post('/', protect, async (req, res) => {
       type,
       title,
       description,
+      category: category || type,  // Use provided category or default to type
+      urgency: urgency || 'medium',
+      quantity,
       location: {
         type: 'Point',
-        coordinates: [parseFloat(lng), parseFloat(lat)]
+        coordinates: [parseFloat(lng), parseFloat(lat)],
+        barangay,
+        city
       },
       address,
+      status: 'open',  // Changed from default 'pending'
       gcashNumber: type === 'money' ? gcashNumber : undefined,
       amountNeeded: type === 'money' ? amountNeeded : undefined
     });
 
     await request.populate('requester', 'name email phone');
 
-    // Notify all active users except requester
     const allUsers = await User.find({ _id: { $ne: req.user._id }, isActive: true });
     const notifications = allUsers.map(user => ({
       user: user._id,
@@ -53,8 +57,6 @@ router.post('/', protect, async (req, res) => {
     }));
 
     if (notifications.length) await Notification.insertMany(notifications);
-
-    // Send email to all
     await sendEmailToAll(request);
 
     res.status(201).json({
@@ -86,12 +88,62 @@ router.get('/', protect, async (req, res) => {
       .sort('-createdAt')
       .limit(100);
 
+    // FIX: Return consistent structure
     res.json({
       success: true,
       count: requests.length,
-      data: requests
+      data: requests  // ✅ This is correct, just ensure frontend expects this
     });
   } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+
+router.get('/my-requests', protect, async (req, res) => {
+  try {
+    console.log('[my-requests] Fetching for user:', req.user?._id);
+    const requests = await Request.find({ requester: req.user._id })
+      .populate('volunteer', 'name phone')
+      .sort('-createdAt')
+      .lean();
+
+    res.json({
+      success: true,
+      count: requests.length,
+      data: Array.isArray(requests) ? requests : []
+    });
+  } catch (error) {
+    console.error('[my-requests] Error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// @route   GET /api/requests/accepted
+router.get('/accepted', protect, async (req, res) => {
+  try {
+    console.log('[accepted] Fetching for volunteer:', req.user?._id);
+    const requests = await Request.find({
+      volunteer: req.user._id,
+      status: { $in: ['in-progress', 'completed'] }
+    })
+      .populate('requester', 'name phone')
+      .sort('-createdAt')
+      .lean();
+
+    res.json({
+      success: true,
+      count: requests.length,
+      data: Array.isArray(requests) ? requests : []
+    });
+  } catch (error) {
+    console.error('[accepted] Error:', error);
     res.status(500).json({
       success: false,
       message: error.message
@@ -270,54 +322,6 @@ router.post('/:id/confirm-complete', protect, async (req, res) => {
   }
 });
 
-// ✅ GET /api/requests/my-requests
-router.get('/my-requests', protect, async (req, res) => {
-  try {
-    console.log('[my-requests] Fetching for user:', req.user?._id);
-    const requests = await Request.find({ requester: req.user._id })
-      .populate('volunteer', 'name phone')
-      .sort('-createdAt')
-      .lean();
-
-    res.json({
-      success: true,
-      count: requests.length,
-      data: Array.isArray(requests) ? requests : []
-    });
-  } catch (error) {
-    console.error('[my-requests] Error:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-});
-
-// ✅ GET /api/requests/accepted
-router.get('/accepted', protect, async (req, res) => {
-  try {
-    console.log('[accepted] Fetching for volunteer:', req.user?._id);
-    const requests = await Request.find({
-      volunteer: req.user._id,
-      status: { $in: ['in-progress', 'completed'] }
-    })
-      .populate('requester', 'name phone')
-      .sort('-createdAt')
-      .lean();
-
-    res.json({
-      success: true,
-      count: requests.length,
-      data: Array.isArray(requests) ? requests : []
-    });
-  } catch (error) {
-    console.error('[accepted] Error:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-});
 
 
 
