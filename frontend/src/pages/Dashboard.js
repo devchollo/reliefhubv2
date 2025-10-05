@@ -27,6 +27,7 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('myRequests');
   const [myRequests, setMyRequests] = useState([]);
   const [acceptedRequests, setAcceptedRequests] = useState([]);
+  const [completedRequests, setCompletedRequests] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -45,7 +46,14 @@ const Dashboard = () => {
       transactionService.getStats()
     ]);
 
-    if (myReqResult.success) setMyRequests(myReqResult.data || []);
+    if (myReqResult.success) {
+      const allMyRequests = myReqResult.data || [];
+      // Filter out completed requests for "My Requests" tab
+      setMyRequests(allMyRequests.filter(r => r.status !== 'completed'));
+      // Separate completed requests
+      setCompletedRequests(allMyRequests.filter(r => r.status === 'completed'));
+    }
+    
     if (acceptedResult.success) setAcceptedRequests(acceptedResult.data || []);
     if (transResult.success) setTransactions(transResult.data || []);
     if (statsResult.success) setStats(statsResult.data);
@@ -144,10 +152,10 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard
             icon={Package}
-            title="My Requests"
+            title="Active Requests"
             value={myRequests.length}
             color="bg-blue-500"
-            subtitle="Requests you've created"
+            subtitle="Ongoing requests"
           />
           <StatCard
             icon={Heart}
@@ -159,7 +167,7 @@ const Dashboard = () => {
           <StatCard
             icon={CheckCircle}
             title="Completed"
-            value={stats?.totalTransactions || 0}
+            value={completedRequests.length}
             color="bg-green-500"
             subtitle="Successfully delivered"
           />
@@ -184,7 +192,7 @@ const Dashboard = () => {
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                My Requests ({myRequests.length})
+                Active Requests ({myRequests.length})
               </button>
               <button
                 onClick={() => setActiveTab('helping')}
@@ -195,6 +203,16 @@ const Dashboard = () => {
                 }`}
               >
                 I'm Helping ({acceptedRequests.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('completed')}
+                className={`py-4 border-b-2 font-medium transition whitespace-nowrap ${
+                  activeTab === 'completed'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Completed ({completedRequests.length})
               </button>
               <button
                 onClick={() => setActiveTab('transactions')}
@@ -216,7 +234,8 @@ const Dashboard = () => {
                 {myRequests.length === 0 ? (
                   <div className="text-center py-12 text-gray-500">
                     <Package className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-                    <p>You haven't created any requests yet</p>
+                    <p>No active requests</p>
+                    <p className="text-sm mt-1">All your requests have been completed</p>
                   </div>
                 ) : (
                   myRequests.map((request) => {
@@ -326,8 +345,83 @@ const Dashboard = () => {
                           </div>
                           <div className="flex items-center gap-2">
                             <Clock className="w-4 h-4 flex-shrink-0" />
-                            <span className="truncate">{new Date(request.acceptedAt).toLocaleDateString()}</span>
+                            <span className="truncate">{new Date(request.acceptedAt || request.createdAt).toLocaleDateString()}</span>
                           </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
+
+            {/* Completed Tab - NEW */}
+            {activeTab === 'completed' && (
+              <div className="space-y-4">
+                {completedRequests.length === 0 ? (
+                  <div className="text-center py-12 text-gray-500">
+                    <CheckCircle className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                    <p>No completed requests yet</p>
+                    <p className="text-sm mt-1">Your completed requests will appear here</p>
+                  </div>
+                ) : (
+                  completedRequests.map((request) => {
+                    const TypeIcon = typeIcons[request.type] || AlertCircle;
+                    return (
+                      <div key={request._id} className="border border-green-200 rounded-lg p-4 bg-green-50/50">
+                        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="p-2 bg-green-100 rounded-lg">
+                                <TypeIcon className="w-5 h-5 text-green-600" />
+                              </div>
+                              <div>
+                                <h3 className="font-semibold text-lg text-gray-900">{request.title}</h3>
+                                <p className="text-xs text-gray-500 capitalize">{request.type}</p>
+                              </div>
+                              <CheckCircle className="w-5 h-5 text-green-600 ml-auto" />
+                            </div>
+                            <p className="text-sm text-gray-600 mb-2">{request.description}</p>
+                          </div>
+                          <div className="flex flex-col gap-2">
+                            <span className={`text-xs px-3 py-1 rounded-full font-medium border ${statusColors[request.status]}`}>
+                              {request.status}
+                            </span>
+                            {request.completedAt && (
+                              <span className="text-xs text-gray-500">
+                                {new Date(request.completedAt).toLocaleDateString()}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-4 h-4 flex-shrink-0" />
+                            <span className="truncate">{request.location?.barangay || 'N/A'}</span>
+                          </div>
+                          {(request.acceptedBy || request.volunteer) && (
+                            <div className="flex items-center gap-2">
+                              <Users className="w-4 h-4 flex-shrink-0" />
+                              <span className="truncate">
+                                Helped by: {request.acceptedBy?.name || request.volunteer?.name}
+                              </span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4 flex-shrink-0" />
+                            <span className="truncate">
+                              Created: {new Date(request.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                          {request.completedAt && (
+                            <div className="flex items-center gap-2">
+                              <CheckCircle className="w-4 h-4 flex-shrink-0 text-green-600" />
+                              <span className="truncate">
+                                Done: {new Date(request.completedAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
@@ -341,7 +435,7 @@ const Dashboard = () => {
               <div className="space-y-4">
                 {transactions.length === 0 ? (
                   <div className="text-center py-12 text-gray-500">
-                    <CheckCircle className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                    <DollarSign className="w-12 h-12 mx-auto mb-3 text-gray-400" />
                     <p>No transactions yet</p>
                   </div>
                 ) : (
