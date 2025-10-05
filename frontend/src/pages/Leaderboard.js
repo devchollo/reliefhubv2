@@ -28,15 +28,19 @@ const Leaderboard = () => {
   }, [filter, timeframe]);
 
   const fetchLeaderboard = async () => {
-    setLoading(true);
-    try {
-      const response = await api.get(`/users/leaderboard?filter=${filter}&timeframe=${timeframe}`);
-      setLeaderboard(response.data);
-    } catch (err) {
-      error('Failed to fetch leaderboard');
-    }
+  setLoading(true);
+  try {
+    const response = await api.get(`/users/leaderboard?filter=${filter}&timeframe=${timeframe}`);
+    // ✅ backend sends { success, data: [...] }
+    setLeaderboard(response.data.data || []); 
+  } catch (err) {
+    console.error('Leaderboard fetch error:', err);
+    error('Failed to fetch leaderboard');
+  } finally {
     setLoading(false);
-  };
+  }
+};
+
 
   const getRankIcon = (rank) => {
     switch (rank) {
