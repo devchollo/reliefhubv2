@@ -2,3 +2,4 @@ websocket for notif and request acceptance, help request
 move completed requests to completed instead of staying in in progress
 chat feature | peer to peer communication only. requestee and volunteer.
 profile page - for requestee to leave review/testimonials
+show the requests on the map pinned
