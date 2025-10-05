@@ -121,12 +121,16 @@ const requestRoutes = require('./routes/requests');
 const transactionRoutes = require('./routes/transactions');
 const notificationRoutes = require('./routes/notifications');
 const userRoutes = require('./routes/users');
+// const chatRoutes = require('./routes/chat');
+// const profileRoutes = require('./routes/profile');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/requests', requestRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/notifications', notificationRoutes);
-app.use('/api/users', userRoutes);
+app.use('/api/users', userRoutes)
+// app.use('/api/chats', chatRoutes);
+// app.use('/api/profile', profileRoutes);;
 
 // Log all registered routes (for debugging)
 if (process.env.NODE_ENV === 'development') {

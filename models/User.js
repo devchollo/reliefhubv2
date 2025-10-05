@@ -53,6 +53,59 @@ const userSchema = new mongoose.Schema({
   isAdmin: {
     type: Boolean,
     default: false
+  },
+   profileImage: String,
+  address: {
+    street: String,
+    barangay: String,
+    city: String,
+    province: String
+  },
+  bio: String,
+  publicProfile: {
+    showPhone: {
+      type: Boolean,
+      default: false
+    },
+    showEmail: {
+      type: Boolean,
+      default: false
+    },
+    showAddress: {
+      type: Boolean,
+      default: false
+    }
+  },
+  stats: {
+    totalHelped: {
+      type: Number,
+      default: 0
+    },
+    totalDonated: {
+      type: Number,
+      default: 0
+    },
+    averageRating: {
+      type: Number,
+      default: 0
+    },
+    totalReviews: {
+      type: Number,
+      default: 0
+    },
+    completedRequests: {
+      type: Number,
+      default: 0
+    },
+    points: {
+      type: Number,
+      default: 0
+    }
+  },
+  leaderboardRank: Number,
+  lastActive: {
+    type: Date,
+    default: Date.now
   }
 }, {
   timestamps: true
