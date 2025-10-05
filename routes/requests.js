@@ -7,6 +7,13 @@ const Notification = require('../models/Notification');
 const { protect } = require('../middleware/auth');
 const { sendEmailToAll } = require('../utils/email');
 
+
+router.use((req, res, next) => {
+  console.log(`[${req.method}] ${req.originalUrl}`, req.user ? req.user._id : 'no user');
+  next();
+});
+
+
 // @route   POST /api/requests
 router.post('/', protect, async (req, res) => {
   try {
@@ -263,21 +270,22 @@ router.post('/:id/confirm-complete', protect, async (req, res) => {
   }
 });
 
-// @route   GET /api/requests/my-requests
-// @desc    Get requests created by the logged-in user
+// ✅ GET /api/requests/my-requests
 router.get('/my-requests', protect, async (req, res) => {
   try {
+    console.log('[my-requests] Fetching for user:', req.user?._id);
     const requests = await Request.find({ requester: req.user._id })
-      .populate('requester', 'name phone')
-      .sort('-createdAt');
+      .populate('volunteer', 'name phone')
+      .sort('-createdAt')
+      .lean();
 
     res.json({
       success: true,
       count: requests.length,
-      data: requests
+      data: Array.isArray(requests) ? requests : []
     });
   } catch (error) {
-    console.error('Error in /my-requests:', error);
+    console.error('[my-requests] Error:', error);
     res.status(500).json({
       success: false,
       message: error.message
@@ -285,29 +293,32 @@ router.get('/my-requests', protect, async (req, res) => {
   }
 });
 
-
-// @route   GET /api/requests/accepted
+// ✅ GET /api/requests/accepted
 router.get('/accepted', protect, async (req, res) => {
   try {
+    console.log('[accepted] Fetching for volunteer:', req.user?._id);
     const requests = await Request.find({
       volunteer: req.user._id,
       status: { $in: ['in-progress', 'completed'] }
     })
-    .populate('requester', 'name phone')
-    .sort('-createdAt');
+      .populate('requester', 'name phone')
+      .sort('-createdAt')
+      .lean();
 
     res.json({
       success: true,
       count: requests.length,
-      data: requests
+      data: Array.isArray(requests) ? requests : []
     });
   } catch (error) {
+    console.error('[accepted] Error:', error);
     res.status(500).json({
       success: false,
       message: error.message
     });
   }
 });
+
 
 
 module.exports = router;
