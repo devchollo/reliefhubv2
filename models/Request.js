@@ -1,5 +1,7 @@
+// ============================================
+// models/Request.js - FIXED VERSION
+// ============================================
 const mongoose = require('mongoose');
-
 
 const requestSchema = new mongoose.Schema({
   requester: {
@@ -21,7 +23,6 @@ const requestSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  // ADD THESE FIELDS:
   category: {
     type: String,
     enum: ['food', 'medical', 'shelter', 'other'],
@@ -45,6 +46,13 @@ const requestSchema = new mongoose.Schema({
     default: 'medium'
   },
   quantity: String,
+  items: {
+    type: [String],
+    default: function() {
+      // Default items based on type
+      return [this.type];
+    }
+  },
   location: {
     type: {
       type: String,
@@ -53,7 +61,13 @@ const requestSchema = new mongoose.Schema({
     },
     coordinates: {
       type: [Number],
-      required: true
+      required: true,
+      validate: {
+        validator: function(v) {
+          return Array.isArray(v) && v.length === 2;
+        },
+        message: 'Coordinates must be [longitude, latitude]'
+      }
     },
     barangay: String,
     city: String
@@ -61,14 +75,14 @@ const requestSchema = new mongoose.Schema({
   address: String,
   status: {
     type: String,
-    enum: ['open', 'accepted', 'in-progress', 'completed', 'cancelled'],
-    default: 'open'  // Changed from 'pending' to 'open'
+    enum: ['open', 'pending', 'accepted', 'in-progress', 'completed', 'cancelled'],
+    default: 'open'
   },
-  acceptedBy: {  // Changed from 'volunteer' to match frontend
+  acceptedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   },
-  volunteer: {  // Keep for backward compatibility
+  volunteer: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   },
@@ -88,3 +102,29 @@ const requestSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+// Create geospatial index for location queries
+requestSchema.index({ location: '2dsphere' });
+
+// Index for common queries
+requestSchema.index({ status: 1, isActive: 1, createdAt: -1 });
+requestSchema.index({ requester: 1, status: 1 });
+requestSchema.index({ volunteer: 1, status: 1 });
+
+// Virtual for backward compatibility
+requestSchema.virtual('acceptedByUser').get(function() {
+  return this.acceptedBy || this.volunteer;
+});
+
+// Ensure both acceptedBy and volunteer are synced
+requestSchema.pre('save', function(next) {
+  if (this.isModified('volunteer') && !this.acceptedBy) {
+    this.acceptedBy = this.volunteer;
+  }
+  if (this.isModified('acceptedBy') && !this.volunteer) {
+    this.volunteer = this.acceptedBy;
+  }
+  next();
+});
+
+module.exports = mongoose.model('Request', requestSchema);
