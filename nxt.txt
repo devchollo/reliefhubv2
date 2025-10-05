@@ -46,5 +46,18 @@ on the Leaderboard page - its not reflecting the actual people I have helped and
 The help request can be closed by the volunteer without the requestee acknowledgement that the volunteer was really able to help them. it should be like this. once a volunteer mark it as complete, the requestee should have an option to acknowledge it so that i can be finally closed.
 now for the help request that includes money - the volunteer / donator should have a button to send exact amount or a custom amount and the payment should undergo our system so that we can get the 10% cut.
 and on the request help modal form, the Barangay be changed to Address, and it should auto populate if the location is auto detected.
-Lastly, the landing page/home page is still not pinning the requests location on the leaflet map! 
+Lastly, the landing page/home page is still not pinning the requests location on the leaflet map! Please scan my repo, ill be sending the frontend first then the backend. wait till i say so. dont answer yet.
 
+
+frontend /
+ - Dashboard
+ - Profile
+ - Settings 
+ - Leaderboard
+ - Navbar
+ - Home 
+ backend / 
+ - routes 
+  > chat.js
+  > profile.js 
+  > *
