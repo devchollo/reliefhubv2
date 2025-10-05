@@ -335,7 +335,7 @@ const Home = () => {
                           <Icon className="w-5 h-5" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-gray-900 truncate group-hover:text-blue-600 transition" style="text-wrap: auto;">
+                          <h3 className="font-semibold text-gray-900 truncate group-hover:text-blue-600 transition break-words">
                             {request.title}
                           </h3>
                           <p className="text-xs text-gray-500 capitalize">{request.type}</p>
