@@ -263,6 +263,29 @@ router.post('/:id/confirm-complete', protect, async (req, res) => {
   }
 });
 
+// @route   GET /api/requests/my-requests
+// @desc    Get requests created by the logged-in user
+router.get('/my-requests', protect, async (req, res) => {
+  try {
+    const requests = await Request.find({ requester: req.user._id })
+      .populate('requester', 'name phone')
+      .sort('-createdAt');
+
+    res.json({
+      success: true,
+      count: requests.length,
+      data: requests
+    });
+  } catch (error) {
+    console.error('Error in /my-requests:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+
 // @route   GET /api/requests/accepted
 router.get('/accepted', protect, async (req, res) => {
   try {
