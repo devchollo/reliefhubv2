@@ -26,10 +26,12 @@ export const SocketProvider = ({ children }) => {
       
       const newSocket = io(process.env.REACT_APP_BASE_URL || 'http://localhost:5000', {
         auth: { token },
+        timeout: 50000,
         reconnection: true,
-        reconnectionDelay: 1000,
+        reconnectionDelay: 2000,
         reconnectionAttempts: 10,
         transports: ['websocket', 'polling']
+        
       });
 
       newSocket.on('connect', () => {
