@@ -267,7 +267,7 @@ server.listen(PORT, () => {
   console.log(`⚡ WebSocket: enabled`);
   console.log('============================================');
   setInterval(() => {
-    fetch("https://your-app-name.onrender.com")
+    fetch("https://reliefhubv2.onrender.com")
       .then(() => console.log("Pinged self to stay awake 🟢"))
       .catch((err) => console.error("Ping failed:", err));
   }, 30 * 1000);
