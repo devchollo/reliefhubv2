@@ -7,31 +7,27 @@ const User = require('../models/User');
 const { protect } = require('../middleware/auth');
 
 // @route   GET /api/users/leaderboard
+// In routes/users.js, update the leaderboard route:
 router.get('/leaderboard', protect, async (req, res) => {
   try {
-    const { type = 'all' } = req.query;
+    const { filter = 'all', timeframe = 'all-time' } = req.query;
 
     let query = { isActive: true };
-    if (type !== 'all') query.userType = type;
+    if (filter !== 'all') {
+      if (filter === 'donors') query['stats.totalDonated'] = { $gt: 0 };
+      else if (filter === 'volunteers') query['stats.totalHelped'] = { $gt: 0 };
+      else if (filter === 'organizations') query.userType = 'organization';
+    }
 
     const users = await User.find(query)
-      .select('name userType totalHelps totalDonated badges')
-      .sort('-totalDonated -totalHelps')
-      .limit(100);
-
-    const leaderboard = users.map((user, index) => ({
-      rank: index + 1,
-      id: user._id,
-      name: user.name,
-      userType: user.userType,
-      totalHelps: user.totalHelps,
-      totalDonated: user.totalDonated,
-      badges: user.badges
-    }));
+      .select('name userType stats badges')
+      .sort('-stats.points -stats.totalHelped -stats.totalDonated')
+      .limit(100)
+      .lean();
 
     res.json({
       success: true,
-      data: leaderboard
+      data: users
     });
   } catch (error) {
     res.status(500).json({

@@ -21,35 +21,39 @@ import {
   Sparkles,
   TrendingUp,
   Shield,
-  Zap
+  Zap,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
 import requestService from "../services/requestService";
+import PaymentModal from "../components/PaymentModal";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
 // Fix Leaflet default marker icon
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+  iconRetinaUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+  iconUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
 // Custom marker colors based on urgency
 const createCustomIcon = (urgency) => {
   const colors = {
-    low: '#10b981',
-    medium: '#f59e0b',
-    high: '#f97316',
-    critical: '#ef4444'
+    low: "#10b981",
+    medium: "#f59e0b",
+    high: "#f97316",
+    critical: "#ef4444",
   };
-  
-  const color = colors[urgency] || '#3b82f6';
-  
+
+  const color = colors[urgency] || "#3b82f6";
+
   return L.divIcon({
-    className: 'custom-marker',
+    className: "custom-marker",
     html: `
       <div style="
         background: ${color};
@@ -68,7 +72,7 @@ const createCustomIcon = (urgency) => {
     `,
     iconSize: [32, 32],
     iconAnchor: [16, 32],
-    popupAnchor: [0, -32]
+    popupAnchor: [0, -32],
   });
 };
 
@@ -82,10 +86,12 @@ const Home = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedPaymentRequest, setSelectedPaymentRequest] = useState(null);
   const [filters, setFilters] = useState({
     category: "",
     urgency: "",
-    type: ""
+    type: "",
   });
 
   const [mapCenter] = useState([10.3157, 123.8854]);
@@ -148,10 +154,16 @@ const Home = () => {
   };
 
   const openInMaps = (lat, lng, app) => {
-    if (app === 'google') {
-      window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
-    } else if (app === 'waze') {
-      window.open(`https://waze.com/ul?ll=${lat},${lng}&navigate=yes`, '_blank');
+    if (app === "google") {
+      window.open(
+        `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,
+        "_blank"
+      );
+    } else if (app === "waze") {
+      window.open(
+        `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`,
+        "_blank"
+      );
     }
   };
 
@@ -243,7 +255,9 @@ const Home = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <select
                   value={filters.type}
-                  onChange={(e) => setFilters({ ...filters, type: e.target.value })}
+                  onChange={(e) =>
+                    setFilters({ ...filters, type: e.target.value })
+                  }
                   className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">All Types</option>
@@ -258,7 +272,9 @@ const Home = () => {
 
                 <select
                   value={filters.urgency}
-                  onChange={(e) => setFilters({ ...filters, urgency: e.target.value })}
+                  onChange={(e) =>
+                    setFilters({ ...filters, urgency: e.target.value })
+                  }
                   className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">All Urgency</option>
@@ -269,7 +285,9 @@ const Home = () => {
                 </select>
 
                 <button
-                  onClick={() => setFilters({ category: "", urgency: "", type: "" })}
+                  onClick={() =>
+                    setFilters({ category: "", urgency: "", type: "" })
+                  }
                   className="px-3 py-2 border border-gray-200 rounded-lg text-sm hover:bg-white transition"
                 >
                   Clear Filters
@@ -293,13 +311,16 @@ const Home = () => {
               </div>
               <div>
                 <p className="text-2xl font-bold">
-                  {filteredRequests.filter(r => r.urgency === 'critical').length}
+                  {
+                    filteredRequests.filter((r) => r.urgency === "critical")
+                      .length
+                  }
                 </p>
                 <p className="text-xs opacity-90">Critical</p>
               </div>
               <div>
                 <p className="text-2xl font-bold">
-                  {filteredRequests.filter(r => r.urgency === 'high').length}
+                  {filteredRequests.filter((r) => r.urgency === "high").length}
                 </p>
                 <p className="text-xs opacity-90">High</p>
               </div>
@@ -317,7 +338,9 @@ const Home = () => {
               <div className="text-center py-12">
                 <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-600">No requests found</p>
-                <p className="text-sm text-gray-500 mt-1">Try adjusting your filters</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Try adjusting your filters
+                </p>
               </div>
             ) : (
               filteredRequests.map((request) => {
@@ -331,17 +354,27 @@ const Home = () => {
                     {/* Header */}
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3 flex-1">
-                        <div className={`p-2 rounded-lg ${typeColors[request.type]}`}>
+                        <div
+                          className={`p-2 rounded-lg ${
+                            typeColors[request.type]
+                          }`}
+                        >
                           <Icon className="w-5 h-5" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-gray-900 truncate group-hover:text-blue-600 transition break-words">
                             {request.title}
                           </h3>
-                          <p className="text-xs text-gray-500 capitalize">{request.type}</p>
+                          <p className="text-xs text-gray-500 capitalize">
+                            {request.type}
+                          </p>
                         </div>
                       </div>
-                      <span className={`text-xs px-2 py-1 rounded-full font-medium border ${urgencyColors[request.urgency]}`}>
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full font-medium border ${
+                          urgencyColors[request.urgency]
+                        }`}
+                      >
                         {request.urgency}
                       </span>
                     </div>
@@ -355,7 +388,10 @@ const Home = () => {
                     {request.items && request.items.length > 0 && (
                       <div className="flex flex-wrap gap-1 mb-3">
                         {request.items.map((item, idx) => (
-                          <span key={idx} className="text-xs px-2 py-1 bg-gray-100 rounded-full text-gray-600 capitalize">
+                          <span
+                            key={idx}
+                            className="text-xs px-2 py-1 bg-gray-100 rounded-full text-gray-600 capitalize"
+                          >
                             {item}
                           </span>
                         ))}
@@ -367,11 +403,15 @@ const Home = () => {
                       <div className="flex items-center gap-3">
                         <div className="flex items-center gap-1">
                           <MapPin className="w-3 h-3" />
-                          <span>{request.location?.barangay || 'Location'}</span>
+                          <span>
+                            {request.location?.barangay || "Location"}
+                          </span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
-                          <span>{new Date(request.createdAt).toLocaleDateString()}</span>
+                          <span>
+                            {new Date(request.createdAt).toLocaleDateString()}
+                          </span>
                         </div>
                       </div>
                       <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition" />
@@ -404,14 +444,22 @@ const Home = () => {
                 ]}
                 icon={createCustomIcon(request.urgency)}
                 eventHandlers={{
-                  click: () => setSelectedRequest(request)
+                  click: () => setSelectedRequest(request),
                 }}
               >
                 <Popup>
                   <div className="p-2 min-w-[200px]">
-                    <h3 className="font-semibold mb-1 text-sm">{request.title}</h3>
-                    <p className="text-xs text-gray-600 mb-2">{request.description}</p>
-                    <span className={`text-xs px-2 py-1 rounded-full ${urgencyColors[request.urgency]}`}>
+                    <h3 className="font-semibold mb-1 text-sm">
+                      {request.title}
+                    </h3>
+                    <p className="text-xs text-gray-600 mb-2">
+                      {request.description}
+                    </p>
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full ${
+                        urgencyColors[request.urgency]
+                      }`}
+                    >
                       {request.urgency}
                     </span>
                   </div>
@@ -422,16 +470,26 @@ const Home = () => {
 
           {/* Floating Legend */}
           <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg p-3 z-10">
-            <h4 className="text-xs font-semibold text-gray-700 mb-2">Urgency Level</h4>
+            <h4 className="text-xs font-semibold text-gray-700 mb-2">
+              Urgency Level
+            </h4>
             <div className="space-y-1">
-              {['critical', 'high', 'medium', 'low'].map(level => (
+              {["critical", "high", "medium", "low"].map((level) => (
                 <div key={level} className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full ${
-                    level === 'critical' ? 'bg-red-500' :
-                    level === 'high' ? 'bg-orange-500' :
-                    level === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
-                  }`}></div>
-                  <span className="text-xs capitalize text-gray-600">{level}</span>
+                  <div
+                    className={`w-3 h-3 rounded-full ${
+                      level === "critical"
+                        ? "bg-red-500"
+                        : level === "high"
+                        ? "bg-orange-500"
+                        : level === "medium"
+                        ? "bg-yellow-500"
+                        : "bg-green-500"
+                    }`}
+                  ></div>
+                  <span className="text-xs capitalize text-gray-600">
+                    {level}
+                  </span>
                 </div>
               ))}
             </div>
@@ -451,24 +509,35 @@ const Home = () => {
               >
                 <X className="w-5 h-5" />
               </button>
-              
+
               <div className="flex items-start gap-4">
                 <div className="p-3 bg-white/20 backdrop-blur-sm rounded-2xl">
-                  {React.createElement(typeIcons[selectedRequest.type] || AlertCircle, {
-                    className: "w-8 h-8"
-                  })}
+                  {React.createElement(
+                    typeIcons[selectedRequest.type] || AlertCircle,
+                    {
+                      className: "w-8 h-8",
+                    }
+                  )}
                 </div>
                 <div className="flex-1">
-                  <h2 className="text-2xl font-bold mb-2">{selectedRequest.title}</h2>
+                  <h2 className="text-2xl font-bold mb-2">
+                    {selectedRequest.title}
+                  </h2>
                   <div className="flex flex-wrap gap-2">
                     <span className="text-xs px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full capitalize">
                       {selectedRequest.type}
                     </span>
-                    <span className={`text-xs px-3 py-1 rounded-full font-medium capitalize ${
-                      selectedRequest.urgency === 'critical' ? 'bg-red-500' :
-                      selectedRequest.urgency === 'high' ? 'bg-orange-500' :
-                      selectedRequest.urgency === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
-                    }`}>
+                    <span
+                      className={`text-xs px-3 py-1 rounded-full font-medium capitalize ${
+                        selectedRequest.urgency === "critical"
+                          ? "bg-red-500"
+                          : selectedRequest.urgency === "high"
+                          ? "bg-orange-500"
+                          : selectedRequest.urgency === "medium"
+                          ? "bg-yellow-500"
+                          : "bg-green-500"
+                      }`}
+                    >
                       {selectedRequest.urgency} Priority
                     </span>
                   </div>
@@ -498,9 +567,14 @@ const Home = () => {
                     {selectedRequest.items.map((item, idx) => {
                       const ItemIcon = typeIcons[item] || AlertCircle;
                       return (
-                        <div key={idx} className={`flex items-center gap-2 p-3 rounded-lg ${typeColors[item]}`}>
+                        <div
+                          key={idx}
+                          className={`flex items-center gap-2 p-3 rounded-lg ${typeColors[item]}`}
+                        >
                           <ItemIcon className="w-4 h-4" />
-                          <span className="text-sm font-medium capitalize">{item}</span>
+                          <span className="text-sm font-medium capitalize">
+                            {item}
+                          </span>
                         </div>
                       );
                     })}
@@ -511,8 +585,12 @@ const Home = () => {
               {/* Quantity */}
               {selectedRequest.quantity && (
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-700 mb-2">Quantity/Details</h3>
-                  <p className="text-gray-600 bg-gray-50 p-3 rounded-lg">{selectedRequest.quantity}</p>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                    Quantity/Details
+                  </h3>
+                  <p className="text-gray-600 bg-gray-50 p-3 rounded-lg">
+                    {selectedRequest.quantity}
+                  </p>
                 </div>
               )}
 
@@ -524,24 +602,38 @@ const Home = () => {
                 </h3>
                 <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-xl space-y-2">
                   <div className="flex items-start gap-2">
-                    <span className="text-xs font-medium text-gray-500 min-w-[80px]">Address:</span>
+                    <span className="text-xs font-medium text-gray-500 min-w-[80px]">
+                      Address:
+                    </span>
                     <span className="text-sm text-gray-900">
-                      {selectedRequest.address || `${selectedRequest.location?.barangay}, ${selectedRequest.location?.city}`}
+                      {selectedRequest.address ||
+                        `${selectedRequest.location?.barangay}, ${selectedRequest.location?.city}`}
                     </span>
                   </div>
                   <div className="flex items-start gap-2">
-                    <span className="text-xs font-medium text-gray-500 min-w-[80px]">Coordinates:</span>
+                    <span className="text-xs font-medium text-gray-500 min-w-[80px]">
+                      Coordinates:
+                    </span>
                     <span className="text-sm font-mono text-gray-900">
-                      {selectedRequest.location.coordinates[1].toFixed(6)}, {selectedRequest.location.coordinates[0].toFixed(6)}
+                      {selectedRequest.location.coordinates[1].toFixed(6)},{" "}
+                      {selectedRequest.location.coordinates[0].toFixed(6)}
                     </span>
                   </div>
                   <div className="flex items-start gap-2">
-                    <span className="text-xs font-medium text-gray-500 min-w-[80px]">Barangay:</span>
-                    <span className="text-sm text-gray-900">{selectedRequest.location?.barangay || 'N/A'}</span>
+                    <span className="text-xs font-medium text-gray-500 min-w-[80px]">
+                      Barangay:
+                    </span>
+                    <span className="text-sm text-gray-900">
+                      {selectedRequest.location?.barangay || "N/A"}
+                    </span>
                   </div>
                   <div className="flex items-start gap-2">
-                    <span className="text-xs font-medium text-gray-500 min-w-[80px]">City:</span>
-                    <span className="text-sm text-gray-900">{selectedRequest.location?.city || 'Cebu City'}</span>
+                    <span className="text-xs font-medium text-gray-500 min-w-[80px]">
+                      City:
+                    </span>
+                    <span className="text-sm text-gray-900">
+                      {selectedRequest.location?.city || "Cebu City"}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -554,13 +646,19 @@ const Home = () => {
                 </h3>
                 <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
                   <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                    {selectedRequest.requester?.name?.charAt(0) || 'U'}
+                    {selectedRequest.requester?.name?.charAt(0) || "U"}
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">{selectedRequest.requester?.name}</p>
-                    <p className="text-sm text-gray-500 capitalize">{selectedRequest.requester?.userType}</p>
+                    <p className="font-medium text-gray-900">
+                      {selectedRequest.requester?.name}
+                    </p>
+                    <p className="text-sm text-gray-500 capitalize">
+                      {selectedRequest.requester?.userType}
+                    </p>
                     {selectedRequest.requester?.phone && (
-                      <p className="text-xs text-gray-500">{selectedRequest.requester.phone}</p>
+                      <p className="text-xs text-gray-500">
+                        {selectedRequest.requester.phone}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -574,25 +672,35 @@ const Home = () => {
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
                   <button
-                    onClick={() => openInMaps(
-                      selectedRequest.location.coordinates[1],
-                      selectedRequest.location.coordinates[0],
-                      'google'
-                    )}
+                    onClick={() =>
+                      openInMaps(
+                        selectedRequest.location.coordinates[1],
+                        selectedRequest.location.coordinates[0],
+                        "google"
+                      )
+                    }
                     className="flex items-center justify-center gap-2 p-4 border-2 border-blue-500 text-blue-600 rounded-xl hover:bg-blue-50 transition font-medium"
                   >
-                    <img src="https://www.google.com/images/branding/product/1x/maps_48dp.png" alt="Google Maps" className="w-6 h-6" />
+                    <img
+                      src="https://www.google.com/images/branding/product/1x/maps_48dp.png"
+                      alt="Google Maps"
+                      className="w-6 h-6"
+                    />
                     Google Maps
                   </button>
                   <button
-                    onClick={() => openInMaps(
-                      selectedRequest.location.coordinates[1],
-                      selectedRequest.location.coordinates[0],
-                      'waze'
-                    )}
+                    onClick={() =>
+                      openInMaps(
+                        selectedRequest.location.coordinates[1],
+                        selectedRequest.location.coordinates[0],
+                        "waze"
+                      )
+                    }
                     className="flex items-center justify-center gap-2 p-4 border-2 border-cyan-500 text-cyan-600 rounded-xl hover:bg-cyan-50 transition font-medium"
                   >
-                    <div className="w-6 h-6 bg-cyan-500 rounded-lg flex items-center justify-center text-white font-bold text-xs">W</div>
+                    <div className="w-6 h-6 bg-cyan-500 rounded-lg flex items-center justify-center text-white font-bold text-xs">
+                      W
+                    </div>
                     Waze
                   </button>
                 </div>
@@ -601,15 +709,32 @@ const Home = () => {
               {/* Action Buttons */}
               {selectedRequest.requester?._id !== user._id && (
                 <div className="pt-2">
-                  <button
-                    onClick={() => handleAcceptRequest(selectedRequest._id)}
-                    className="w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
-                  >
-                    <Heart className="w-5 h-5" />
-                    Accept & Help This Request
-                  </button>
+                  {selectedRequest.type === "money" ? (
+                    <button
+                      onClick={() => {
+                        setSelectedPaymentRequest(selectedRequest);
+                        setShowPaymentModal(true);
+                        setSelectedRequest(null);
+                      }}
+                      className="w-full py-4 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-xl font-semibold hover:from-green-700 hover:to-blue-700 transition shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                    >
+                      <DollarSign className="w-5 h-5" />
+                      Send Money (₱
+                      {selectedRequest.amountNeeded?.toLocaleString()})
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleAcceptRequest(selectedRequest._id)}
+                      className="w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                    >
+                      <Heart className="w-5 h-5" />
+                      Accept & Help This Request
+                    </button>
+                  )}
                   <p className="text-xs text-center text-gray-500 mt-2">
-                    By accepting, you commit to helping fulfill this request
+                    {selectedRequest.type === "money"
+                      ? "10% platform fee applies to support Relief Hub operations"
+                      : "By accepting, you commit to helping fulfill this request"}
                   </p>
                 </div>
               )}
@@ -624,6 +749,22 @@ const Home = () => {
           onClose={() => setShowCreateModal(false)}
           onSuccess={() => {
             setShowCreateModal(false);
+            fetchRequests();
+          }}
+        />
+      )}
+
+      {/* Payment Modal */}
+      {showPaymentModal && selectedPaymentRequest && (
+        <PaymentModal
+          request={selectedPaymentRequest}
+          onClose={() => {
+            setShowPaymentModal(false);
+            setSelectedPaymentRequest(null);
+          }}
+          onSuccess={() => {
+            setShowPaymentModal(false);
+            setSelectedPaymentRequest(null);
             fetchRequests();
           }}
         />
@@ -667,11 +808,11 @@ const CreateRequestModal = ({ onClose, onSuccess }) => {
   }, []);
 
   const handleItemToggle = (item) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       items: prev.items.includes(item)
-        ? prev.items.filter(i => i !== item)
-        : [...prev.items, item]
+        ? prev.items.filter((i) => i !== item)
+        : [...prev.items, item],
     }));
   };
 
@@ -709,7 +850,7 @@ const CreateRequestModal = ({ onClose, onSuccess }) => {
       quantity: formData.quantity,
       barangay: formData.barangay,
       city: formData.city,
-      items: formData.items
+      items: formData.items,
     };
 
     const result = await requestService.createRequest(requestData);
@@ -747,8 +888,13 @@ const CreateRequestModal = ({ onClose, onSuccess }) => {
           <h2 className="text-2xl font-bold mb-2">Create Relief Request</h2>
           <p className="text-sm opacity-90">Step {step} of 3</p>
           <div className="flex gap-2 mt-3">
-            {[1, 2, 3].map(s => (
-              <div key={s} className={`h-1 flex-1 rounded-full ${s <= step ? 'bg-white' : 'bg-white/30'}`}></div>
+            {[1, 2, 3].map((s) => (
+              <div
+                key={s}
+                className={`h-1 flex-1 rounded-full ${
+                  s <= step ? "bg-white" : "bg-white/30"
+                }`}
+              ></div>
             ))}
           </div>
         </div>
@@ -758,11 +904,15 @@ const CreateRequestModal = ({ onClose, onSuccess }) => {
           {step === 1 && (
             <div className="space-y-6 animate-fade-in">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">Request Title</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  Request Title
+                </label>
                 <input
                   type="text"
                   value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, title: e.target.value })
+                  }
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="e.g., Need food supplies for family"
                   required
@@ -770,10 +920,14 @@ const CreateRequestModal = ({ onClose, onSuccess }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">Description</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  Description
+                </label>
                 <textarea
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl h-32 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Provide details about your request..."
                   required
@@ -781,18 +935,25 @@ const CreateRequestModal = ({ onClose, onSuccess }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">Primary Type</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  Primary Type
+                </label>
                 <select
                   value={formData.type}
                   onChange={(e) => {
                     const type = e.target.value;
-                    setFormData({ 
-                      ...formData, 
+                    setFormData({
+                      ...formData,
                       type,
-                      category: type === 'food' || type === 'water' ? 'food' :
-                               type === 'medical' ? 'medical' :
-                               type === 'shelter' ? 'shelter' : 'other',
-                      items: [type]
+                      category:
+                        type === "food" || type === "water"
+                          ? "food"
+                          : type === "medical"
+                          ? "medical"
+                          : type === "shelter"
+                          ? "shelter"
+                          : "other",
+                      items: [type],
                     });
                   }}
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500"
@@ -809,10 +970,14 @@ const CreateRequestModal = ({ onClose, onSuccess }) => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">Urgency</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    Urgency
+                  </label>
                   <select
                     value={formData.urgency}
-                    onChange={(e) => setFormData({ ...formData, urgency: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, urgency: e.target.value })
+                    }
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="low">Low</option>
@@ -823,11 +988,15 @@ const CreateRequestModal = ({ onClose, onSuccess }) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">Quantity</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    Quantity
+                  </label>
                   <input
                     type="text"
                     value={formData.quantity}
-                    onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, quantity: e.target.value })
+                    }
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500"
                     placeholder="e.g., 10 food packs"
                     required
@@ -841,8 +1010,12 @@ const CreateRequestModal = ({ onClose, onSuccess }) => {
           {step === 2 && (
             <div className="space-y-6 animate-fade-in">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">Select All Items Needed</label>
-                <p className="text-sm text-gray-500 mb-4">Choose all that apply</p>
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  Select All Items Needed
+                </label>
+                <p className="text-sm text-gray-500 mb-4">
+                  Choose all that apply
+                </p>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {Object.entries(typeIcons).map(([key, Icon]) => (
                     <button
@@ -851,12 +1024,14 @@ const CreateRequestModal = ({ onClose, onSuccess }) => {
                       onClick={() => handleItemToggle(key)}
                       className={`p-4 rounded-xl border-2 transition ${
                         formData.items.includes(key)
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
-                          : 'border-gray-200 hover:border-gray-300'
+                          ? "border-blue-500 bg-blue-50 text-blue-700"
+                          : "border-gray-200 hover:border-gray-300"
                       }`}
                     >
                       <Icon className="w-6 h-6 mx-auto mb-2" />
-                      <span className="text-sm font-medium capitalize">{key}</span>
+                      <span className="text-sm font-medium capitalize">
+                        {key}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -868,23 +1043,35 @@ const CreateRequestModal = ({ onClose, onSuccess }) => {
           {step === 3 && (
             <div className="space-y-6 animate-fade-in">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">Barangay</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  Address <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   value={formData.barangay}
-                  onChange={(e) => setFormData({ ...formData, barangay: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, barangay: e.target.value })
+                  }
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter barangay name"
+                  placeholder="Enter your complete address"
                   required
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Street, Barangay, City - Will auto-populate if location
+                  detected
+                </p>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">City</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  City
+                </label>
                 <input
                   type="text"
                   value={formData.city}
-                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, city: e.target.value })
+                  }
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500"
                   placeholder="Cebu City"
                   required
@@ -893,52 +1080,103 @@ const CreateRequestModal = ({ onClose, onSuccess }) => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">Latitude</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    Latitude
+                  </label>
                   <input
                     type="number"
                     step="any"
                     value={formData.latitude}
-                    onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, latitude: e.target.value })
+                    }
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500"
                     required
+                    readOnly
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">Longitude</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    Longitude
+                  </label>
                   <input
                     type="number"
                     step="any"
                     value={formData.longitude}
-                    onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, longitude: e.target.value })
+                    }
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500"
                     required
+                    readOnly
                   />
                 </div>
               </div>
 
               <button
                 type="button"
-                onClick={() => {
+                onClick={async () => {
                   if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(
-                      (pos) => {
+                      async (pos) => {
+                        const lat = pos.coords.latitude;
+                        const lng = pos.coords.longitude;
+
                         setFormData((prev) => ({
                           ...prev,
-                          latitude: pos.coords.latitude,
-                          longitude: pos.coords.longitude,
+                          latitude: lat,
+                          longitude: lng,
                         }));
-                        success("Location detected!");
+
+                        // Reverse geocode to get address
+                        try {
+                          const response = await fetch(
+                            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`
+                          );
+                          const data = await response.json();
+
+                          if (data.address) {
+                            const address = data.address;
+                            const fullAddress = [
+                              address.road,
+                              address.suburb || address.neighbourhood,
+                              address.city || address.town || address.village,
+                            ]
+                              .filter(Boolean)
+                              .join(", ");
+
+                            setFormData((prev) => ({
+                              ...prev,
+                              barangay: fullAddress,
+                              city: address.city || address.town || "Cebu City",
+                            }));
+
+                            success("Location detected and address populated!");
+                          }
+                        } catch (err) {
+                          console.error("Geocoding error:", err);
+                          success("Location detected!");
+                        }
                       },
                       (err) => error("Unable to get location: " + err.message)
                     );
+                  } else {
+                    error("Geolocation not supported by your browser");
                   }
                 }}
-                className="w-full p-3 border-2 border-dashed border-blue-300 rounded-xl text-blue-600 hover:bg-blue-50 transition flex items-center justify-center gap-2"
+                className="w-full p-4 border-2 border-dashed border-blue-300 rounded-xl text-blue-600 hover:bg-blue-50 transition flex items-center justify-center gap-2 font-medium"
               >
                 <Navigation className="w-5 h-5" />
-                Use My Current Location
+                Use My Current Location & Auto-fill Address
               </button>
+
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-xs text-blue-800">
+                  💡 Tip: Click the button above to automatically detect your
+                  location and fill in your address
+                </p>
+              </div>
             </div>
           )}
 
