@@ -29,6 +29,7 @@ import requestService from "../services/requestService";
 import PaymentModal from "../components/PaymentModal";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { useSocket } from "../context/SocketContext";
 
 // Fix Leaflet default marker icon
 delete L.Icon.Default.prototype._getIconUrl;
@@ -93,6 +94,7 @@ const Home = () => {
     urgency: "",
     type: "",
   });
+  const { socket, isConnected } = useSocket();
 
   const [mapCenter] = useState([10.3157, 123.8854]);
 
