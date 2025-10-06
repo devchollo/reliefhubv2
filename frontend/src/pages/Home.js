@@ -104,6 +104,26 @@ const Home = () => {
     applyFilters();
   }, [requests, filters, searchQuery]);
 
+  useEffect(() => {
+    if (socket && isConnected) {
+      const handleNewRequest = () => {
+        fetchRequests(); // Refresh the list
+      };
+
+      const handleRequestUpdate = () => {
+        fetchRequests(); // Refresh the list
+      };
+
+      window.addEventListener("request:new", handleNewRequest);
+      window.addEventListener("request:update", handleRequestUpdate);
+
+      return () => {
+        window.removeEventListener("request:new", handleNewRequest);
+        window.removeEventListener("request:update", handleRequestUpdate);
+      };
+    }
+  }, [socket, isConnected]);
+
   const fetchRequests = async () => {
     setLoading(true);
     const result = await requestService.getAllRequests({ status: "open" });

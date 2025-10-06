@@ -6,6 +6,7 @@ const router = express.Router();
 const Chat = require('../models/Chat');
 const Request = require('../models/Request');
 const { protect } = require('../middleware/auth');
+const getIO = (req) => req.app.get('io');
 
 // @route   GET /api/chats
 // @desc    Get all chats for current user
@@ -134,7 +135,6 @@ router.post('/:chatId/messages', protect, async (req, res) => {
       });
     }
 
-    // Check if user is participant
     if (!chat.participants.includes(req.user._id)) {
       return res.status(403).json({
         success: false,
@@ -156,6 +156,13 @@ router.post('/:chatId/messages', protect, async (req, res) => {
     ]);
 
     const newMessage = chat.messages[chat.messages.length - 1];
+
+    // 🔥 EMIT SOCKET EVENT
+    const io = getIO(req);
+    io.to(`chat:${chat._id}`).emit('chat:message', {
+      chatId: chat._id,
+      message: newMessage
+    });
 
     res.json({
       success: true,
@@ -184,7 +191,6 @@ router.put('/:chatId/read', protect, async (req, res) => {
       });
     }
 
-    // Check if user is participant
     if (!chat.participants.includes(req.user._id)) {
       return res.status(403).json({
         success: false,
@@ -192,7 +198,6 @@ router.put('/:chatId/read', protect, async (req, res) => {
       });
     }
 
-    // Mark all messages from other user as read
     chat.messages.forEach(message => {
       if (message.sender.toString() !== req.user._id.toString() && !message.isRead) {
         message.isRead = true;
@@ -201,6 +206,13 @@ router.put('/:chatId/read', protect, async (req, res) => {
     });
 
     await chat.save();
+
+    // 🔥 EMIT SOCKET EVENT
+    const io = getIO(req);
+    io.to(`chat:${chat._id}`).emit('chat:messagesRead', {
+      chatId: chat._id,
+      readBy: req.user._id
+    });
 
     res.json({
       success: true,

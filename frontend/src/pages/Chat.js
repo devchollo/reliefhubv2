@@ -1,12 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { useNotification } from '../context/NotificationContext';
-import { useSocket } from '../context/SocketContext';
-import {
-  Send, ArrowLeft, Info, MessageCircle, Package
-} from 'lucide-react';
-import api from '../config/api';
+import React, { useState, useEffect, useRef } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { useNotification } from "../context/NotificationContext";
+import { useSocket } from "../context/SocketContext";
+import { Send, ArrowLeft, Info, MessageCircle, Package } from "lucide-react";
+import api from "../config/api";
 
 const Chat = () => {
   const { requestId } = useParams();
@@ -14,15 +12,15 @@ const Chat = () => {
   const { error } = useNotification();
   const { socket, isConnected } = useSocket();
   const navigate = useNavigate();
-  
+
   const [chat, setChat] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState('');
+  const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [typing, setTyping] = useState(false);
   const [otherUser, setOtherUser] = useState(null);
-  
+
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
@@ -32,16 +30,54 @@ const Chat = () => {
 
   useEffect(() => {
     if (chat && socket && isConnected) {
-      socket.emit('chat:join', chat._id);
-      socket.on('chat:message', handleNewMessage);
-      socket.on('chat:typing', handleTyping);
-      socket.on('chat:messagesRead', handleMessagesRead);
+      socket.emit("chat:join", chat._id);
+
+      // Listen for new messages
+      const handleNewMessage = (data) => {
+        if (data.chatId === chat._id) {
+          setMessages((prev) => {
+            // Avoid duplicates
+            const exists = prev.find(
+              (m) =>
+                m.content === data.message.content &&
+                m.createdAt === data.message.createdAt
+            );
+            if (exists) return prev;
+            return [...prev, data.message];
+          });
+          scrollToBottom();
+        }
+      };
+
+      const handleTyping = (data) => {
+        if (data.userId !== user._id) {
+          setTyping(data.isTyping);
+          if (data.isTyping) {
+            setTimeout(() => setTyping(false), 3000);
+          }
+        }
+      };
+
+      const handleMessagesRead = (data) => {
+        if (data.chatId === chat._id && data.readBy !== user._id) {
+          setMessages((prev) =>
+            prev.map((msg) => ({
+              ...msg,
+              isRead: msg.sender._id === user._id ? true : msg.isRead,
+            }))
+          );
+        }
+      };
+
+      socket.on("chat:message", handleNewMessage);
+      socket.on("chat:typing", handleTyping);
+      socket.on("chat:messagesRead", handleMessagesRead);
 
       return () => {
-        socket.emit('chat:leave', chat._id);
-        socket.off('chat:message', handleNewMessage);
-        socket.off('chat:typing', handleTyping);
-        socket.off('chat:messagesRead', handleMessagesRead);
+        socket.emit("chat:leave", chat._id);
+        socket.off("chat:message", handleNewMessage);
+        socket.off("chat:typing", handleTyping);
+        socket.off("chat:messagesRead", handleMessagesRead);
       };
     }
   }, [chat, socket, isConnected]);
@@ -63,14 +99,15 @@ const Chat = () => {
       const chatData = response.data.data;
       setChat(chatData);
       setMessages(chatData.messages || []);
-      
-      const other = chatData.requester._id === user._id 
-        ? chatData.volunteer 
-        : chatData.requester;
+
+      const other =
+        chatData.requester._id === user._id
+          ? chatData.volunteer
+          : chatData.requester;
       setOtherUser(other);
     } catch (err) {
-      console.error('Error fetching chat:', err);
-      error('Failed to load chat');
+      console.error("Error fetching chat:", err);
+      error("Failed to load chat");
     } finally {
       setLoading(false);
     }
@@ -78,7 +115,7 @@ const Chat = () => {
 
   const handleNewMessage = (data) => {
     if (data.chatId === chat._id) {
-      setMessages(prev => [...prev, data.message]);
+      setMessages((prev) => [...prev, data.message]);
     }
   };
 
@@ -93,10 +130,12 @@ const Chat = () => {
 
   const handleMessagesRead = (data) => {
     if (data.chatId === chat._id && data.readBy !== user._id) {
-      setMessages(prev => prev.map(msg => ({
-        ...msg,
-        isRead: msg.sender._id === user._id ? true : msg.isRead
-      })));
+      setMessages((prev) =>
+        prev.map((msg) => ({
+          ...msg,
+          isRead: msg.sender._id === user._id ? true : msg.isRead,
+        }))
+      );
     }
   };
 
@@ -105,35 +144,46 @@ const Chat = () => {
     if (!newMessage.trim() || sending) return;
 
     const content = newMessage.trim();
-    setNewMessage('');
+    setNewMessage("");
     setSending(true);
 
     try {
       if (socket && isConnected) {
-        socket.emit('chat:message', {
+        // 🔥 Send via Socket for instant delivery
+        socket.emit("chat:message", {
           chatId: chat._id,
-          content
+          content,
+          senderId: user._id,
+          senderName: user.name,
         });
+
+        // Also save to database as backup
+        await api.post(`/chats/${chat._id}/messages`, { content });
       } else {
-        const response = await api.post(`/chats/${chat._id}/messages`, { content });
+        // Fallback to HTTP if socket not connected
+        const response = await api.post(`/chats/${chat._id}/messages`, {
+          content,
+        });
         if (response.data.success) {
-          setMessages(prev => [...prev, response.data.data]);
+          setMessages((prev) => [...prev, response.data.data]);
         }
       }
     } catch (err) {
-      console.error('Error sending message:', err);
-      error('Failed to send message');
+      console.error("Error sending message:", err);
+      error("Failed to send message");
       setNewMessage(content);
     } finally {
       setSending(false);
     }
   };
 
+  // Update typing indicator to use socket:
   const handleTypingIndicator = () => {
     if (socket && isConnected) {
-      socket.emit('chat:typing', {
+      socket.emit("chat:typing", {
         chatId: chat._id,
-        isTyping: true
+        userId: user._id,
+        isTyping: true,
       });
 
       if (typingTimeoutRef.current) {
@@ -141,28 +191,33 @@ const Chat = () => {
       }
 
       typingTimeoutRef.current = setTimeout(() => {
-        socket.emit('chat:typing', {
+        socket.emit("chat:typing", {
           chatId: chat._id,
-          isTyping: false
+          userId: user._id,
+          isTyping: false,
         });
       }, 1000);
     }
   };
 
+  // Update markAsRead to use socket:
   const markAsRead = async () => {
     try {
       if (socket && isConnected) {
-        socket.emit('chat:read', { chatId: chat._id });
-      } else {
-        await api.put(`/chats/${chat._id}/read`);
+        socket.emit("chat:read", {
+          chatId: chat._id,
+          readBy: user._id,
+        });
       }
+      // Also call API as backup
+      await api.put(`/chats/${chat._id}/read`);
     } catch (err) {
-      console.error('Error marking as read:', err);
+      console.error("Error marking as read:", err);
     }
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   if (loading) {
@@ -180,7 +235,7 @@ const Chat = () => {
           <MessageCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-600">Chat not available</p>
           <button
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate("/dashboard")}
             className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
           >
             Go to Dashboard
@@ -201,14 +256,18 @@ const Chat = () => {
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          
+
           <div
             className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition"
             onClick={() => navigate(`/profile/${otherUser._id}`)}
           >
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold">
               {otherUser.profileImage ? (
-                <img src={otherUser.profileImage} alt={otherUser.name} className="w-full h-full rounded-full object-cover" />
+                <img
+                  src={otherUser.profileImage}
+                  alt={otherUser.name}
+                  className="w-full h-full rounded-full object-cover"
+                />
               ) : (
                 otherUser.name.charAt(0)
               )}
@@ -216,7 +275,7 @@ const Chat = () => {
             <div>
               <p className="font-semibold text-gray-900">{otherUser.name}</p>
               <p className="text-xs text-gray-500">
-                {isConnected ? 'Online' : 'Offline'}
+                {isConnected ? "Online" : "Offline"}
               </p>
             </div>
           </div>
@@ -236,7 +295,9 @@ const Chat = () => {
         <div className="flex items-center gap-3">
           <Package className="w-5 h-5 text-blue-600" />
           <div className="flex-1">
-            <p className="text-sm font-medium text-blue-900">{chat.request.title}</p>
+            <p className="text-sm font-medium text-blue-900">
+              {chat.request.title}
+            </p>
             <p className="text-xs text-blue-600 capitalize">
               {chat.request.type} • {chat.request.status}
             </p>
@@ -251,42 +312,60 @@ const Chat = () => {
             <div className="text-center">
               <MessageCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-600">No messages yet</p>
-              <p className="text-sm text-gray-500 mt-1">Start the conversation!</p>
+              <p className="text-sm text-gray-500 mt-1">
+                Start the conversation!
+              </p>
             </div>
           </div>
         ) : (
           messages.map((message, idx) => {
             const isOwn = message.sender._id === user._id;
-            const showAvatar = idx === 0 || messages[idx - 1].sender._id !== message.sender._id;
-            
+            const showAvatar =
+              idx === 0 || messages[idx - 1].sender._id !== message.sender._id;
+
             return (
               <div
                 key={message._id || idx}
-                className={`flex items-end gap-2 ${isOwn ? 'flex-row-reverse' : ''}`}
+                className={`flex items-end gap-2 ${
+                  isOwn ? "flex-row-reverse" : ""
+                }`}
               >
                 {showAvatar && !isOwn && (
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
                     {message.sender.profileImage ? (
-                      <img src={message.sender.profileImage} alt="" className="w-full h-full rounded-full object-cover" />
+                      <img
+                        src={message.sender.profileImage}
+                        alt=""
+                        className="w-full h-full rounded-full object-cover"
+                      />
                     ) : (
                       message.sender.name.charAt(0)
                     )}
                   </div>
                 )}
                 {!showAvatar && !isOwn && <div className="w-8"></div>}
-                
+
                 <div className={`max-w-[70%]`}>
                   <div
                     className={`px-4 py-2 rounded-2xl ${
                       isOwn
-                        ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
-                        : 'bg-white border border-gray-200 text-gray-900'
+                        ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+                        : "bg-white border border-gray-200 text-gray-900"
                     }`}
                   >
                     <p className="break-words">{message.content}</p>
                   </div>
-                  <div className={`flex items-center gap-2 mt-1 text-xs text-gray-500 ${isOwn ? 'justify-end' : ''}`}>
-                    <span>{new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  <div
+                    className={`flex items-center gap-2 mt-1 text-xs text-gray-500 ${
+                      isOwn ? "justify-end" : ""
+                    }`}
+                  >
+                    <span>
+                      {new Date(message.createdAt).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
                     {isOwn && message.isRead && (
                       <span className="text-blue-600">✓✓</span>
                     )}
@@ -296,7 +375,7 @@ const Chat = () => {
             );
           })
         )}
-        
+
         {typing && (
           <div className="flex items-end gap-2">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold">
@@ -304,14 +383,23 @@ const Chat = () => {
             </div>
             <div className="bg-white border border-gray-200 px-4 py-2 rounded-2xl">
               <div className="flex gap-1">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                <div
+                  className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                  style={{ animationDelay: "0ms" }}
+                ></div>
+                <div
+                  className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                  style={{ animationDelay: "150ms" }}
+                ></div>
+                <div
+                  className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                  style={{ animationDelay: "300ms" }}
+                ></div>
               </div>
             </div>
           </div>
         )}
-        
+
         <div ref={messagesEndRef} />
       </div>
 

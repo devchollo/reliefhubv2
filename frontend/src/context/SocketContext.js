@@ -1,3 +1,4 @@
+// frontend/src/context/SocketContext.js - ENHANCED
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
@@ -27,12 +28,16 @@ export const SocketProvider = ({ children }) => {
         auth: { token },
         reconnection: true,
         reconnectionDelay: 1000,
-        reconnectionAttempts: 5
+        reconnectionAttempts: 10,
+        transports: ['websocket', 'polling']
       });
 
       newSocket.on('connect', () => {
-        console.log('✅ Socket connected');
+        console.log('✅ Socket connected:', newSocket.id);
         setIsConnected(true);
+        
+        // Join user's personal room for notifications
+        newSocket.emit('user:join', user._id);
       });
 
       newSocket.on('disconnect', () => {
@@ -45,17 +50,24 @@ export const SocketProvider = ({ children }) => {
         setIsConnected(false);
       });
 
+      // Notification events
       newSocket.on('notification:new', (notification) => {
         info(notification.message);
         window.dispatchEvent(new Event('notification:new'));
+      });
+
+      // Request events
+      newSocket.on('request:new', (data) => {
+        window.dispatchEvent(new CustomEvent('request:new', { detail: data }));
       });
 
       newSocket.on('request:update', (data) => {
         window.dispatchEvent(new CustomEvent('request:update', { detail: data }));
       });
 
+      // User presence
       newSocket.on('user:online', (data) => {
-        console.log('User online:', data.userName);
+        console.log('User online:', data.userId);
       });
 
       newSocket.on('user:offline', (data) => {
