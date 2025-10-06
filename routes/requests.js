@@ -441,12 +441,63 @@ router.post('/:id/confirm-complete', protect, async (req, res) => {
     request.completedAt = Date.now();
     await request.save();
 
-    // Update volunteer's help count
+    // Update volunteer's stats and award points
     if (request.volunteer) {
+      const volunteer = await User.findById(request.volunteer);
+      
+      // Award base points (10 per completion)
+      const basePoints = 10;
+      
+      // Extra points for urgency
+      const urgencyBonus = request.urgency === 'critical' ? 15 : 
+                          request.urgency === 'high' ? 10 : 
+                          request.urgency === 'medium' ? 5 : 0;
+      
+      const totalPoints = basePoints + urgencyBonus;
+
       await User.findByIdAndUpdate(request.volunteer, {
-        $inc: { totalHelps: 1 }
+        $inc: { 
+          'stats.totalHelped': 1,
+          'stats.completedRequests': 1,
+          'stats.points': totalPoints,
+          totalHelps: 1  // Legacy field
+        }
       });
+
+      // Award badges
+      const completedCount = await Request.countDocuments({
+        volunteer: request.volunteer,
+        status: 'completed'
+      });
+
+      const newBadges = [];
+      if (completedCount === 1) {
+        newBadges.push({ name: 'First Help', type: 'milestone', earnedAt: new Date() });
+      }
+      if (completedCount === 10) {
+        newBadges.push({ name: 'Helper', type: 'milestone', earnedAt: new Date() });
+      }
+      if (completedCount === 50) {
+        newBadges.push({ name: 'Super Helper', type: 'milestone', earnedAt: new Date() });
+      }
+      if (completedCount === 100) {
+        newBadges.push({ name: 'Relief Champion', type: 'milestone', earnedAt: new Date() });
+      }
+
+      if (newBadges.length > 0) {
+        await User.findByIdAndUpdate(request.volunteer, {
+          $push: { badges: { $each: newBadges } }
+        });
+      }
     }
+
+    // Notify volunteer
+    await Notification.create({
+      user: request.volunteer,
+      type: 'request_completed',
+      message: `${req.user.name} confirmed completion! You earned points!`,
+      relatedRequest: request._id
+    });
 
     await request.populate(['requester', 'volunteer', 'acceptedBy']);
 
@@ -456,6 +507,7 @@ router.post('/:id/confirm-complete', protect, async (req, res) => {
       data: request
     });
   } catch (error) {
+    console.error('Error confirming completion:', error);
     res.status(500).json({
       success: false,
       message: error.message

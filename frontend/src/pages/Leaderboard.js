@@ -34,22 +34,14 @@ const Leaderboard = () => {
         `/users/leaderboard?filter=${filter}&timeframe=${timeframe}`
       );
 
-      // ✅ Map backend data properly
-      const leaderboardData = response.data.data.map((user, index) => ({
-        _id: user.id || user._id,
-        name: user.name,
-        userType: user.userType,
-        totalHelped: user.stats?.totalHelped || user.totalHelps || 0,
-        completedRequests: user.stats?.completedRequests || 0,
-        averageRating: user.stats?.averageRating || 0,
-        points: user.stats?.points || 0,
-        badges: user.badges || [],
-      }));
+      console.log("📊 Leaderboard data:", response.data);
 
-      setLeaderboard(leaderboardData);
+      // Backend now returns properly formatted data
+      setLeaderboard(response.data.data || []);
     } catch (err) {
       console.error("Leaderboard fetch error:", err);
       error("Failed to fetch leaderboard");
+      setLeaderboard([]);
     } finally {
       setLoading(false);
     }
@@ -303,7 +295,15 @@ const Leaderboard = () => {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold">
-                            {person.name.charAt(0)}
+                            {person.profileImage ? (
+                              <img
+                                src={person.profileImage}
+                                alt={person.name}
+                                className="w-full h-full rounded-full object-cover"
+                              />
+                            ) : (
+                              person.name.charAt(0)
+                            )}
                           </div>
                           <div>
                             <p className="font-medium text-gray-900">
@@ -335,7 +335,9 @@ const Leaderboard = () => {
                         <div className="flex items-center justify-center gap-1">
                           <Star className="w-4 h-4 text-yellow-500 fill-current" />
                           <span className="font-semibold">
-                            {person.averageRating?.toFixed(1) || "N/A"}
+                            {person.averageRating
+                              ? person.averageRating.toFixed(1)
+                              : "N/A"}
                           </span>
                         </div>
                       </td>
@@ -362,16 +364,24 @@ const Leaderboard = () => {
         {/* Current User Highlight */}
         {user && leaderboard.length > 0 && (
           <div className="mt-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-lg p-6 text-white">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 rounded-full bg-white bg-opacity-20 flex items-center justify-center text-2xl font-bold">
-                  {user.name.charAt(0)}
+                  {user.profileImage ? (
+                    <img
+                      src={user.profileImage}
+                      alt={user.name}
+                      className="w-full h-full rounded-full object-cover"
+                    />
+                  ) : (
+                    user.name.charAt(0)
+                  )}
                 </div>
                 <div>
                   <p className="text-sm opacity-90">Your Position</p>
                   <h3 className="text-2xl font-bold">{user.name}</h3>
                   <p className="text-sm opacity-75">
-                    Rank:{" "}
+                    Rank: #
                     {leaderboard.findIndex((p) => p._id === user._id) + 1 ||
                       "Unranked"}
                   </p>
@@ -380,19 +390,27 @@ const Leaderboard = () => {
               <div className="flex gap-6">
                 <div className="text-center">
                   <p className="text-3xl font-bold">
-                    {user.stats?.totalHelped || 0}
+                    {leaderboard.find((p) => p._id === user._id)?.totalHelped ||
+                      user.stats?.totalHelped ||
+                      0}
                   </p>
                   <p className="text-sm opacity-75">People Helped</p>
                 </div>
                 <div className="text-center">
                   <p className="text-3xl font-bold">
-                    {user.stats?.points || 0}
+                    {leaderboard.find((p) => p._id === user._id)?.points ||
+                      user.stats?.points ||
+                      0}
                   </p>
                   <p className="text-sm opacity-75">Total Points</p>
                 </div>
                 <div className="text-center">
                   <p className="text-3xl font-bold">
-                    {user.stats?.averageRating?.toFixed(1) || "N/A"}
+                    {leaderboard
+                      .find((p) => p._id === user._id)
+                      ?.averageRating?.toFixed(1) ||
+                      user.stats?.averageRating?.toFixed(1) ||
+                      "N/A"}
                   </p>
                   <p className="text-sm opacity-75">Rating</p>
                 </div>
