@@ -24,366 +24,201 @@ const Chat = () => {
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
-  // useEffect(() => {
-  //   fetchChat();
-  // }, [requestId]);
+  useEffect(() => {
+    fetchChat();
+  }, [requestId]);
 
-  // useEffect(() => {
-  //   if (chat && socket && isConnected) {
-  //     socket.emit("chat:join", chat._id);
+  useEffect(() => {
+    if (chat && socket && isConnected) {
+      socket.emit("chat:join", chat._id);
 
-  //     // Listen for new messages
-  //     const handleNewMessage = (data) => {
-  //       if (data.chatId === chat._id) {
-  //         setMessages((prev) => {
-  //           // Avoid duplicates
-  //           const exists = prev.find(
-  //             (m) =>
-  //               m.content === data.message.content &&
-  //               m.createdAt === data.message.createdAt
-  //           );
-  //           if (exists) return prev;
-  //           return [...prev, data.message];
-  //         });
-  //         scrollToBottom();
-  //       }
-  //     };
+      // Listen for new messages
+      const handleNewMessage = (data) => {
+        if (data.chatId === chat._id) {
+          setMessages((prev) => {
+            // Avoid duplicates
+            const exists = prev.find(
+              (m) =>
+                m.content === data.message.content &&
+                m.createdAt === data.message.createdAt
+            );
+            if (exists) return prev;
+            return [...prev, data.message];
+          });
+          scrollToBottom();
+        }
+      };
 
-  //     const handleTyping = (data) => {
-  //       if (data.userId !== user._id) {
-  //         setTyping(data.isTyping);
-  //         if (data.isTyping) {
-  //           setTimeout(() => setTyping(false), 3000);
-  //         }
-  //       }
-  //     };
+      const handleTyping = (data) => {
+        if (data.userId !== user._id) {
+          setTyping(data.isTyping);
+          if (data.isTyping) {
+            setTimeout(() => setTyping(false), 3000);
+          }
+        }
+      };
 
-  //     const handleMessagesRead = (data) => {
-  //       if (data.chatId === chat._id && data.readBy !== user._id) {
-  //         setMessages((prev) =>
-  //           prev.map((msg) => ({
-  //             ...msg,
-  //             isRead: msg.sender._id === user._id ? true : msg.isRead,
-  //           }))
-  //         );
-  //       }
-  //     };
+      const handleMessagesRead = (data) => {
+        if (data.chatId === chat._id && data.readBy !== user._id) {
+          setMessages((prev) =>
+            prev.map((msg) => ({
+              ...msg,
+              isRead: msg.sender._id === user._id ? true : msg.isRead,
+            }))
+          );
+        }
+      };
 
-  //     socket.on("chat:message", handleNewMessage);
-  //     socket.on("chat:typing", handleTyping);
-  //     socket.on("chat:messagesRead", handleMessagesRead);
+      socket.on("chat:message", handleNewMessage);
+      socket.on("chat:typing", handleTyping);
+      socket.on("chat:messagesRead", handleMessagesRead);
 
-  //     return () => {
-  //       socket.emit("chat:leave", chat._id);
-  //       socket.off("chat:message", handleNewMessage);
-  //       socket.off("chat:typing", handleTyping);
-  //       socket.off("chat:messagesRead", handleMessagesRead);
-  //     };
-  //   }
-  // }, [chat, socket, isConnected]);
+      return () => {
+        socket.emit("chat:leave", chat._id);
+        socket.off("chat:message", handleNewMessage);
+        socket.off("chat:typing", handleTyping);
+        socket.off("chat:messagesRead", handleMessagesRead);
+      };
+    }
+  }, [chat, socket, isConnected]);
 
-  // useEffect(() => {
-  //   scrollToBottom();
-  // }, [messages]);
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
-  // useEffect(() => {
-  //   if (chat && messages.length > 0) {
-  //     markAsRead();
-  //   }
-  // }, [chat, messages]);
+  useEffect(() => {
+    if (chat && messages.length > 0) {
+      markAsRead();
+    }
+  }, [chat, messages]);
 
-  // const fetchChat = async () => {
-  //   setLoading(true);
-  //   try {
-  //     const response = await api.get(`/chats/request/${requestId}`);
-  //     const chatData = response.data.data;
-  //     setChat(chatData);
-  //     setMessages(chatData.messages || []);
+  const fetchChat = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get(`/chats/request/${requestId}`);
+      const chatData = response.data.data;
+      setChat(chatData);
+      setMessages(chatData.messages || []);
 
-  //     const other =
-  //       chatData.requester._id === user._id
-  //         ? chatData.volunteer
-  //         : chatData.requester;
-  //     setOtherUser(other);
-  //   } catch (err) {
-  //     console.error("Error fetching chat:", err);
-  //     error("Failed to load chat");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-  // const handleNewMessage = (data) => {
-  //   if (data.chatId === chat._id) {
-  //     setMessages((prev) => [...prev, data.message]);
-  //   }
-  // };
-
-  // const handleTyping = (data) => {
-  //   if (data.userId !== user._id) {
-  //     setTyping(data.isTyping);
-  //     if (data.isTyping) {
-  //       setTimeout(() => setTyping(false), 3000);
-  //     }
-  //   }
-  // };
-
-  // const handleMessagesRead = (data) => {
-  //   if (data.chatId === chat._id && data.readBy !== user._id) {
-  //     setMessages((prev) =>
-  //       prev.map((msg) => ({
-  //         ...msg,
-  //         isRead: msg.sender._id === user._id ? true : msg.isRead,
-  //       }))
-  //     );
-  //   }
-  // };
-
-  // const handleSendMessage = async (e) => {
-  //   e.preventDefault();
-  //   if (!newMessage.trim() || sending) return;
-
-  //   const content = newMessage.trim();
-  //   setNewMessage("");
-  //   setSending(true);
-
-  //   try {
-  //     if (socket && isConnected) {
-  //       // 🔥 Send via Socket for instant delivery
-  //       socket.emit("chat:message", {
-  //         chatId: chat._id,
-  //         content,
-  //         senderId: user._id,
-  //         senderName: user.name,
-  //       });
-
-  //       // Also save to database as backup
-  //       await api.post(`/chats/${chat._id}/messages`, { content });
-  //     } else {
-  //       // Fallback to HTTP if socket not connected
-  //       const response = await api.post(`/chats/${chat._id}/messages`, {
-  //         content,
-  //       });
-  //       if (response.data.success) {
-  //         setMessages((prev) => [...prev, response.data.data]);
-  //       }
-  //     }
-  //   } catch (err) {
-  //     console.error("Error sending message:", err);
-  //     error("Failed to send message");
-  //     setNewMessage(content);
-  //   } finally {
-  //     setSending(false);
-  //   }
-  // };
-
-  // // Update typing indicator to use socket:
-  // const handleTypingIndicator = () => {
-  //   if (socket && isConnected) {
-  //     socket.emit("chat:typing", {
-  //       chatId: chat._id,
-  //       userId: user._id,
-  //       isTyping: true,
-  //     });
-
-  //     if (typingTimeoutRef.current) {
-  //       clearTimeout(typingTimeoutRef.current);
-  //     }
-
-  //     typingTimeoutRef.current = setTimeout(() => {
-  //       socket.emit("chat:typing", {
-  //         chatId: chat._id,
-  //         userId: user._id,
-  //         isTyping: false,
-  //       });
-  //     }, 1000);
-  //   }
-  // };
-
-  // // Update markAsRead to use socket:
-  // const markAsRead = async () => {
-  //   try {
-  //     if (socket && isConnected) {
-  //       socket.emit("chat:read", {
-  //         chatId: chat._id,
-  //         readBy: user._id,
-  //       });
-  //     }
-  //     // Also call API as backup
-  //     await api.put(`/chats/${chat._id}/read`);
-  //   } catch (err) {
-  //     console.error("Error marking as read:", err);
-  //   }
-  // };
-
-  // const scrollToBottom = () => {
-  //   messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  // };
-
-  // 🔹 Keep this once at the top (same)
-useEffect(() => {
-  fetchChat();
-}, [requestId]);
-
-// 🔹 Socket event handling (only one effect)
-useEffect(() => {
-  if (!chat || !socket || !isConnected) return;
-
-  socket.emit("chat:join", chat._id);
+      const other =
+        chatData.requester._id === user._id
+          ? chatData.volunteer
+          : chatData.requester;
+      setOtherUser(other);
+    } catch (err) {
+      console.error("Error fetching chat:", err);
+      error("Failed to load chat");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleNewMessage = (data) => {
-    if (data.chatId !== chat._id) return;
-
-    setMessages((prev) => {
-      const exists = prev.find(
-        (m) =>
-          m.content === data.message.content &&
-          m.createdAt === data.message.createdAt
-      );
-      return exists ? prev : [...prev, data.message];
-    });
-
-    scrollToBottom();
+    if (data.chatId === chat._id) {
+      setMessages((prev) => [...prev, data.message]);
+    }
   };
 
   const handleTyping = (data) => {
-    if (data.userId === user._id) return;
-    setTyping(data.isTyping);
-    if (data.isTyping) {
-      setTimeout(() => setTyping(false), 3000);
+    if (data.userId !== user._id) {
+      setTyping(data.isTyping);
+      if (data.isTyping) {
+        setTimeout(() => setTyping(false), 3000);
+      }
     }
   };
 
   const handleMessagesRead = (data) => {
-    if (data.chatId !== chat._id || data.readBy === user._id) return;
-    setMessages((prev) =>
-      prev.map((msg) => ({
-        ...msg,
-        isRead: msg.sender._id === user._id ? true : msg.isRead,
-      }))
-    );
+    if (data.chatId === chat._id && data.readBy !== user._id) {
+      setMessages((prev) =>
+        prev.map((msg) => ({
+          ...msg,
+          isRead: msg.sender._id === user._id ? true : msg.isRead,
+        }))
+      );
+    }
   };
 
-  // ✅ Register listeners once
-  socket.on("chat:message", handleNewMessage);
-  socket.on("chat:typing", handleTyping);
-  socket.on("chat:messagesRead", handleMessagesRead);
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!newMessage.trim() || sending) return;
 
-  // ✅ Cleanup to prevent stacking
-  return () => {
-    socket.emit("chat:leave", chat._id);
-    socket.off("chat:message", handleNewMessage);
-    socket.off("chat:typing", handleTyping);
-    socket.off("chat:messagesRead", handleMessagesRead);
-  };
-}, [chat?._id, socket, isConnected, user._id]);
+    const content = newMessage.trim();
+    setNewMessage("");
+    setSending(true);
 
-// 🔹 Scroll and read effects
-useEffect(() => {
-  scrollToBottom();
-}, [messages]);
+    try {
+      if (socket && isConnected) {
+        // 🔥 Send via Socket for instant delivery
+        socket.emit("chat:message", {
+          chatId: chat._id,
+          content,
+          senderId: user._id,
+          senderName: user.name,
+        });
 
-useEffect(() => {
-  if (chat && messages.length > 0) {
-    markAsRead();
-  }
-}, [chat, messages]);
-
-// ==================================================
-// HELPER FUNCTIONS
-// ==================================================
-const fetchChat = async () => {
-  setLoading(true);
-  try {
-    const response = await api.get(`/chats/request/${requestId}`);
-    const chatData = response.data.data;
-    setChat(chatData);
-    setMessages(chatData.messages || []);
-
-    const other =
-      chatData.requester._id === user._id
-        ? chatData.volunteer
-        : chatData.requester;
-    setOtherUser(other);
-  } catch (err) {
-    console.error("Error fetching chat:", err);
-    error("Failed to load chat");
-  } finally {
-    setLoading(false);
-  }
-};
-
-const handleSendMessage = async (e) => {
-  e.preventDefault();
-  if (!newMessage.trim() || sending) return;
-
-  const content = newMessage.trim();
-  setNewMessage("");
-  setSending(true);
-
-  try {
-    if (socket && isConnected) {
-      socket.emit("chat:message", {
-        chatId: chat._id,
-        content,
-        senderId: user._id,
-        senderName: user.name,
-      });
-      await api.post(`/chats/${chat._id}/messages`, { content });
-    } else {
-      const response = await api.post(`/chats/${chat._id}/messages`, {
-        content,
-      });
-      if (response.data.success) {
-        setMessages((prev) => [...prev, response.data.data]);
+        // Also save to database as backup
+        await api.post(`/chats/${chat._id}/messages`, { content });
+      } else {
+        // Fallback to HTTP if socket not connected
+        const response = await api.post(`/chats/${chat._id}/messages`, {
+          content,
+        });
+        if (response.data.success) {
+          setMessages((prev) => [...prev, response.data.data]);
+        }
       }
+    } catch (err) {
+      console.error("Error sending message:", err);
+      error("Failed to send message");
+      setNewMessage(content);
+    } finally {
+      setSending(false);
     }
-  } catch (err) {
-    console.error("Error sending message:", err);
-    error("Failed to send message");
-    setNewMessage(content);
-  } finally {
-    setSending(false);
-  }
-};
+  };
 
-const handleTypingIndicator = () => {
-  if (!socket || !isConnected) return;
-  socket.emit("chat:typing", {
-    chatId: chat._id,
-    userId: user._id,
-    isTyping: true,
-  });
-
-  if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-
-  typingTimeoutRef.current = setTimeout(() => {
-    socket.emit("chat:typing", {
-      chatId: chat._id,
-      userId: user._id,
-      isTyping: false,
-    });
-  }, 1000);
-};
-
-const markAsRead = async () => {
-  try {
+  // Update typing indicator to use socket:
+  const handleTypingIndicator = () => {
     if (socket && isConnected) {
-      socket.emit("chat:read", {
+      socket.emit("chat:typing", {
         chatId: chat._id,
-        readBy: user._id,
+        userId: user._id,
+        isTyping: true,
       });
+
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+
+      typingTimeoutRef.current = setTimeout(() => {
+        socket.emit("chat:typing", {
+          chatId: chat._id,
+          userId: user._id,
+          isTyping: false,
+        });
+      }, 1000);
     }
-    await api.put(`/chats/${chat._id}/read`);
-  } catch (err) {
-    console.error("Error marking as read:", err);
-  }
-};
+  };
 
-const scrollToBottom = () => {
-  messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-};
+  // Update markAsRead to use socket:
+  const markAsRead = async () => {
+    try {
+      if (socket && isConnected) {
+        socket.emit("chat:read", {
+          chatId: chat._id,
+          readBy: user._id,
+        });
+      }
+      // Also call API as backup
+      await api.put(`/chats/${chat._id}/read`);
+    } catch (err) {
+      console.error("Error marking as read:", err);
+    }
+  };
 
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   if (loading) {
     return (
