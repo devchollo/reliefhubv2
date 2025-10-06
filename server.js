@@ -266,12 +266,15 @@ server.listen(PORT, () => {
   console.log(`🔗 API: http://localhost:${PORT}/api`);
   console.log(`⚡ WebSocket: enabled`);
   console.log('============================================');
+  
   setInterval(() => {
     fetch("https://reliefhubv2.onrender.com")
       .then(() => console.log("Pinged self to stay awake 🟢"))
       .catch((err) => console.error("Ping failed:", err));
   }, 30 * 1000);
 });
+
+
 
 process.on('unhandledRejection', (err) => {
   console.error('❌ Unhandled Rejection:', err.message);
